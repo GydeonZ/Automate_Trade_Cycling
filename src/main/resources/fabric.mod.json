@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "automate-trade-cycling",
+	"version": "${version}",
+	"name": "Automate Trade Cycling",
+	"description": "Automating Trade Cycling with using what item you want!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/automate-trade-cycling/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.shuu.mod.AutomateTradeCycling"
+		],
+		"fabric-datagen": [
+			"net.shuu.mod.AutomateTradeCyclingDataGenerator"
+		],
+        "client": [
+          "net.shuu.mod.AutomateTradeCyclingClient"
+        ]
+	},
+	"mixins": [
+		"automate-trade-cycling.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
