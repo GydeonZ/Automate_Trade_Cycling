@@ -3,13 +3,14 @@
 	"id": "automate-trade-cycling",
 	"version": "${version}",
 	"name": "Automate Trade Cycling",
-	"description": "Automating Trade Cycling with using what item you want!",
+	"description": "Otomatis cycling villager trades sampai menemukan item yang Anda inginkan! Pilih item dari GUI, tekan start, dan biarkan mod bekerja.",
 	"authors": [
-		"Me!"
+		"Shuu"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/GydeonZ/Automate_Trade_Cycling",
+		"sources": "https://github.com/GydeonZ/Automate_Trade_Cycling",
+		"issues": "https://github.com/GydeonZ/Automate_Trade_Cycling/issues"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/automate-trade-cycling/icon.png",
@@ -21,9 +22,9 @@
 		"fabric-datagen": [
 			"net.shuu.mod.AutomateTradeCyclingDataGenerator"
 		],
-        "client": [
-          "net.shuu.mod.AutomateTradeCyclingClient"
-        ]
+		"client": [
+			"net.shuu.mod.AutomateTradeCyclingClient"
+		]
 	},
 	"mixins": [
 		"automate-trade-cycling.mixins.json"
@@ -33,5 +34,8 @@
 		"minecraft": "~1.21.1",
 		"java": ">=21",
 		"fabric-api": "*"
+	},
+	"recommends": {
+		"fabric-key-binding-api-v1": "*"
 	}
 }

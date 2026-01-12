@@ -3,6 +3,9 @@
 	"package": "net.shuu.mod.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"VillagerEntityMixin"
+	],
+	"client": [
 		"ExampleMixin"
 	],
 	"injectors": {
