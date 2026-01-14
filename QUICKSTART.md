@@ -1,88 +1,88 @@
-# ⚡ Quick Start Guide - Automate Trade Cycling
+# ⚡ Quick Start Guide - VillagerTrade Pro
 
-## 🚀 Setup Cepat (5 Menit)
+## 🚀 Quick Setup (5 Minutes)
 
-### 1. Install (1 menit)
+### 1. Installation (1 minute)
 ```
-1. Pastikan Fabric Loader + Fabric API sudah terinstall
-2. Download: build/libs/automate-trade-cycling-1.0.0.jar
-3. Taruh di folder: .minecraft/mods/
-4. Jalankan Minecraft
+1. Make sure Fabric Loader + Fabric API are installed
+2. Download: build/libs/villagertrade-pro-1.0.0.jar
+3. Place in folder: .minecraft/mods/
+4. Launch Minecraft
 ```
 
-### 2. Gunakan (3 menit)
+### 2. Usage (3 minutes)
 ```
-1. Cari villager dengan profesi (Librarian, Armorer, dll)
-2. Pastikan villager BELUM PERNAH di-trade (masih Novice)
-3. Arahkan crosshair ke villager
-4. Tekan V → Pilih item yang kamu mau
-5. Klik "Start Cycling" atau tekan C
-6. Tunggu sampai ketemu! ✨
+1. Find a villager with a profession (Librarian, Armorer, etc.)
+2. Make sure the villager has NEVER been traded with (still Novice)
+3. Point crosshair at the villager
+4. Press V → Select the item you want
+5. Click "Start Cycling" or press C
+6. Wait until found! ✨
 ```
 
 ### 3. Keybinds
 ```
-V = Buka GUI pemilihan item
+V = Open item selection GUI
 C = Start/Stop cycling
 ```
 
-## 🎯 Contoh Penggunaan
+## 🎯 Usage Examples
 
-### Mencari Mending (Enchanted Book)
+### Finding Mending (Enchanted Book)
 ```
-1. Buat Lectern dekat villager unemployed
-2. Villager jadi Librarian
-3. Tekan V → Pilih "Enchanted Book"
-4. Tekan C untuk start cycling
-5. Cek trade offers saat notifikasi muncul
-6. Jika bukan Mending, break Lectern
-7. Place Lectern lagi (villager reset)
-8. Repeat sampai dapat Mending!
+1. Place Lectern near an unemployed villager
+2. Villager becomes Librarian
+3. Press V → Select "Enchanted Book" → Select "Mending"
+4. Press C to start cycling
+5. Check trade offers when notification appears
+6. If not Mending, break Lectern
+7. Place Lectern again (villager resets)
+8. Repeat until you get Mending!
 ```
 
-### Mencari Diamond Gear
+### Finding Diamond Gear
 ```
-Armorer:    Blast Furnace → Diamond Armor
-Toolsmith:  Smithing Table → Diamond Tools  
+Armorer:     Blast Furnace → Diamond Armor
+Toolsmith:   Smithing Table → Diamond Tools  
 Weaponsmith: Grindstone → Diamond Sword/Axe
 ```
 
 ## 💡 Pro Tips
 
 ✅ **DO:**
-- Gunakan villager baru/untaded
-- Buat trading hall dengan cell terpisah
-- Pilih beberapa item sekaligus
-- Sabar - RNG butuh waktu
+- Use new/untraded villagers
+- Build a trading hall with separate cells
+- Select multiple items at once
+- Be patient - RNG takes time
 
 ❌ **DON'T:**
-- Trade dulu sebelum cycle (akan lock permanent!)
-- Cycle villager tanpa job site access
-- Gunakan Nitwit/Unemployed villager
+- Trade before cycling (will lock permanently!)
+- Cycle villagers without job site access
+- Use Nitwit/Unemployed villagers
 
-## 🔧 Troubleshooting Cepat
+## 🔧 Quick Troubleshooting
 
-**Cycling tidak jalan?**
-→ Cek villager belum pernah di-trade & punya job site
+**Cycling not working?**
+→ Check that villager has never been traded with & has job site access
 
-**GUI tidak muncul?**
-→ Pastikan crosshair tepat ke villager dengan profesi
+**GUI not appearing?**
+→ Make sure crosshair is pointing at villager with profession
 
-**Item tidak ketemu?**
-→ Keep trying, atau reset villager dengan break/place job site
+**Item not found?**
+→ Keep trying, or reset villager by breaking/placing job site
 
-## 📖 Dokumentasi Lengkap
+## 📖 Full Documentation
 
-- **Bahasa Indonesia**: Baca `PANDUAN_INDONESIA.md`
-- **English**: Baca `README.md`
-- **Changelog**: Lihat `CHANGELOG.md`
+- **English**: Read `README.md`
+- **Indonesian**: Read `PANDUAN_INDONESIA.md`
+- **Changelog**: See `CHANGELOG.md`
 
-## 🎮 Selamat Bermain!
+## 🎮 Enjoy!
 
-Mod ini akan **SANGAT** menghemat waktu Anda untuk:
-- 📚 Mencari enchanted books langka
-- ⚔️ Mendapatkan gear diamond dengan enchant bagus
-- 💎 Setup trading hall yang perfect
-- 🎯 Optimize villager trading station
+This mod will **GREATLY** save your time for:
+- 📚 Finding rare enchanted books
+- ⚔️ Getting diamond gear with good enchantments
+- 💎 Setting up the perfect trading hall
+- 🎯 Optimizing villager trading stations
 
-**Good luck dan happy trading!** 🎉
+**Good luck and happy trading!** 🎉

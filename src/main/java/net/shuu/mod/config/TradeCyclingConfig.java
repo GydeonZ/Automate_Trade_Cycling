@@ -1,7 +1,9 @@
 package net.shuu.mod.config;
 
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.village.VillagerProfession;
 import java.util.*;
 
@@ -10,6 +12,10 @@ public class TradeCyclingConfig {
 
   // Map untuk menyimpan item yang dicari per profesi
   private final Map<VillagerProfession, Set<Item>> desiredItems = new HashMap<>();
+
+  // Map untuk menyimpan enchantment dengan level yang dicari per profesi (khusus
+  // Librarian)
+  private final Map<VillagerProfession, Set<EnchantmentWithLevel>> desiredEnchantments = new HashMap<>();
 
   // Status cycling
   private boolean isCycling = false;
@@ -58,6 +64,27 @@ public class TradeCyclingConfig {
 
   public void clearDesiredItems(VillagerProfession profession) {
     desiredItems.remove(profession);
+  }
+
+  // Enchantment methods
+  public void setDesiredEnchantments(VillagerProfession profession, Set<EnchantmentWithLevel> enchantments) {
+    if (enchantments == null || enchantments.isEmpty()) {
+      desiredEnchantments.remove(profession);
+    } else {
+      desiredEnchantments.put(profession, new HashSet<>(enchantments));
+    }
+  }
+
+  public Set<EnchantmentWithLevel> getDesiredEnchantments(VillagerProfession profession) {
+    return desiredEnchantments.getOrDefault(profession, Collections.emptySet());
+  }
+
+  public boolean hasDesiredEnchantments(VillagerProfession profession) {
+    return desiredEnchantments.containsKey(profession) && !desiredEnchantments.get(profession).isEmpty();
+  }
+
+  public void clearDesiredEnchantments(VillagerProfession profession) {
+    desiredEnchantments.remove(profession);
   }
 
   public boolean isCycling() {

@@ -3,10 +3,12 @@
 	"package": "net.shuu.mod.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"VillagerEntityMixin"
+		"VillagerEntityMixin",
+		"MerchantScreenHandlerAccessor"
 	],
 	"client": [
-		"ExampleMixin"
+		"ExampleMixin",
+		"MerchantScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

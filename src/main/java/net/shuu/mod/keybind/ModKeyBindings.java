@@ -7,7 +7,9 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.village.VillagerProfession;
 import net.shuu.mod.manager.TradeCyclingManager;
+import net.shuu.mod.screen.EnchantmentSelectionScreen;
 import net.shuu.mod.screen.ItemSelectionScreen;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,15 +45,22 @@ public class ModKeyBindings {
       VillagerEntity villager = TradeCyclingManager.getTargetedVillager(client);
 
       if (villager != null) {
-        if (villager.getVillagerData().getProfession() == net.minecraft.village.VillagerProfession.NONE ||
-            villager.getVillagerData().getProfession() == net.minecraft.village.VillagerProfession.NITWIT) {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+
+        if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) {
           if (client.player != null) {
             client.player.sendMessage(Text.literal("§cVillager ini tidak memiliki profesi!"), false);
           }
           return;
         }
 
-        client.setScreen(new ItemSelectionScreen(villager));
+        // Untuk Librarian, buka enchantment selection screen
+        if (profession == VillagerProfession.LIBRARIAN) {
+          client.setScreen(new EnchantmentSelectionScreen(villager));
+        } else {
+          // Untuk profesi lain, buka item selection screen
+          client.setScreen(new ItemSelectionScreen(villager));
+        }
       } else {
         if (client.player != null) {
           client.player.sendMessage(Text.literal("§cArahkan crosshair ke villager terlebih dahulu!"), false);

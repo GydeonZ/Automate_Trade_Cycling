@@ -89,8 +89,11 @@ public class ItemSelectionScreen extends Screen {
 
   @Override
   public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-    // Background
+    // Render background dengan opsi yang benar untuk Minecraft 1.21.1
     this.renderBackground(context, mouseX, mouseY, delta);
+
+    // Render widgets (buttons) setelah background
+    super.render(context, mouseX, mouseY, delta);
 
     // Title
     context.drawCenteredTextWithShadow(this.textRenderer, this.title,
@@ -114,8 +117,6 @@ public class ItemSelectionScreen extends Screen {
     context.drawCenteredTextWithShadow(this.textRenderer,
         Text.literal("§7Klik item untuk memilih/membatalkan pilihan"),
         this.width / 2, this.height - 60, 0xFFFFFF);
-
-    super.render(context, mouseX, mouseY, delta);
   }
 
   private void renderItemGrid(DrawContext context, int mouseX, int mouseY) {
@@ -198,6 +199,6 @@ public class ItemSelectionScreen extends Screen {
 
   @Override
   public boolean shouldPause() {
-    return false;
+    return true;
   }
 }

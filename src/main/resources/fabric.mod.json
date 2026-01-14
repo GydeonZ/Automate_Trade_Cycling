@@ -2,8 +2,8 @@
 	"schemaVersion": 1,
 	"id": "automate-trade-cycling",
 	"version": "${version}",
-	"name": "Automate Trade Cycling",
-	"description": "Otomatis cycling villager trades sampai menemukan item yang Anda inginkan! Pilih item dari GUI, tekan start, dan biarkan mod bekerja.",
+	"name": "VillagerTrade Pro",
+	"description": "Automatically cycle villager trades until you find the items you want! Select items from GUI, press start, and let the mod do the work.",
 	"authors": [
 		"Shuu"
 	],
