@@ -1,6 +1,10 @@
 package net.shuu.mod;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.shuu.mod.network.CycleTradesPacket;
+import net.shuu.mod.network.PacketHandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +19,23 @@ public class AutomateTradeCycling implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+		// Register networking
+		registerPackets();
 
-		LOGGER.info("Hello Fabric world!");
+		LOGGER.info("Automate Trade Cycling initialized!");
+	}
+
+	private void registerPackets() {
+		// Register payload type
+		PayloadTypeRegistry.playC2S().register(CycleTradesPacket.ID, CycleTradesPacket.CODEC);
+
+		// Register server-side packet handler
+		ServerPlayNetworking.registerGlobalReceiver(CycleTradesPacket.ID, (payload, context) -> {
+			context.server().execute(() -> {
+				PacketHandler.onCycleTrades(context.player());
+			});
+		});
+
+		LOGGER.info("Registered CycleTradesPacket handler");
 	}
 }
