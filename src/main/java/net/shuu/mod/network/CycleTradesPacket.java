@@ -6,20 +6,14 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.shuu.mod.AutomateTradeCycling;
 
-/**
- * Packet untuk mengirim request cycling dari client ke server
- * Mirip dengan CycleTradesPacket dari trade-cycling mod
- */
 public record CycleTradesPacket() implements CustomPacketPayload {
-
-  public static final CustomPacketPayload.Type<CycleTradesPacket> TYPE = new CustomPacketPayload.Type<>(
+  public static final Type<CycleTradesPacket> ID = new Type<>(
       Identifier.fromNamespaceAndPath(AutomateTradeCycling.MOD_ID, "cycle_trades"));
-
-  public static final StreamCodec<RegistryFriendlyByteBuf, CycleTradesPacket> CODEC = StreamCodec
-      .unit(new CycleTradesPacket());
+  public static final StreamCodec<RegistryFriendlyByteBuf, CycleTradesPacket> CODEC =
+      StreamCodec.unit(new CycleTradesPacket());
 
   @Override
   public Type<? extends CustomPacketPayload> type() {
-    return TYPE;
+    return ID;
   }
 }

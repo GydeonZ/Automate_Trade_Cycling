@@ -1,24 +1,23 @@
 package net.shuu.mod.keybind;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.Holder;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
-import net.shuu.mod.AutomateTradeCycling;
+import net.minecraft.resources.ResourceKey;
 import net.shuu.mod.manager.TradeCyclingManager;
 import net.shuu.mod.screen.EnchantmentSelectionScreen;
 import net.shuu.mod.screen.ItemSelectionScreen;
+import net.shuu.mod.AutomateTradeCycling;
 
 public class ModKeyBindings {
 
-  public static final KeyMapping.Category CATEGORY = KeyMapping.Category
-      .register(Identifier.fromNamespaceAndPath(AutomateTradeCycling.MOD_ID, "main"));
+  private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(AutomateTradeCycling.MOD_ID, "main"));
 
   public static KeyMapping openItemSelectionKey;
   public static KeyMapping startStopCyclingKey;
@@ -28,14 +27,14 @@ public class ModKeyBindings {
     openItemSelectionKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
         "key.automate-trade-cycling.open_selection",
         InputConstants.Type.KEYBOARD,
-        InputConstants.KEY_V,
+        86,
         CATEGORY));
 
     // Keybind untuk start/stop cycling (default: C)
     startStopCyclingKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
         "key.automate-trade-cycling.toggle_cycling",
         InputConstants.Type.KEYBOARD,
-        InputConstants.KEY_C,
+        67,
         CATEGORY));
 
     // Register tick event untuk handle key press
@@ -50,17 +49,17 @@ public class ModKeyBindings {
       Villager villager = TradeCyclingManager.getTargetedVillager(client);
 
       if (villager != null) {
-        Holder<VillagerProfession> profession = villager.getVillagerData().profession();
+        ResourceKey<VillagerProfession> profession = villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE);
 
-        if (profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT)) {
+        if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) {
           if (client.player != null) {
-            client.player.sendSystemMessage(Component.literal("§cVillager ini tidak memiliki profesi!"));
+            client.player.sendOverlayMessage(Component.literal("§cVillager ini tidak memiliki profesi!"));
           }
           return;
         }
 
         // Untuk Librarian, buka enchantment selection screen
-        if (profession.is(VillagerProfession.LIBRARIAN)) {
+        if (profession == VillagerProfession.LIBRARIAN) {
           client.setScreenAndShow(new EnchantmentSelectionScreen(villager));
         } else {
           // Untuk profesi lain, buka item selection screen
@@ -68,7 +67,7 @@ public class ModKeyBindings {
         }
       } else {
         if (client.player != null) {
-          client.player.sendSystemMessage(Component.literal("§cArahkan crosshair ke villager terlebih dahulu!"));
+          client.player.sendOverlayMessage(Component.literal("§cArahkan crosshair ke villager terlebih dahulu!"));
         }
       }
     }
@@ -81,18 +80,17 @@ public class ModKeyBindings {
         // Stop cycling
         manager.stopCycling();
         if (client.player != null) {
-          client.player.sendSystemMessage(Component.literal("§eTrade cycling dihentikan!"));
+          client.player.sendOverlayMessage(Component.literal("§eTrade cycling dihentikan!"));
         }
       } else {
         // Start cycling dengan villager yang sedang ditarget
         Villager villager = TradeCyclingManager.getTargetedVillager(client);
 
         if (villager != null) {
-          Holder<VillagerProfession> profession = villager.getVillagerData().profession();
-
-          if (profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT)) {
+          if (villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE) == net.minecraft.world.entity.npc.villager.VillagerProfession.NONE ||
+              villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE) == net.minecraft.world.entity.npc.villager.VillagerProfession.NITWIT) {
             if (client.player != null) {
-              client.player.sendSystemMessage(Component.literal("§cVillager ini tidak memiliki profesi!"));
+              client.player.sendOverlayMessage(Component.literal("§cVillager ini tidak memiliki profesi!"));
             }
             return;
           }
@@ -100,7 +98,7 @@ public class ModKeyBindings {
           manager.startCycling(villager);
         } else {
           if (client.player != null) {
-            client.player.sendSystemMessage(Component.literal("§cArahkan crosshair ke villager terlebih dahulu!"));
+            client.player.sendOverlayMessage(Component.literal("§cArahkan crosshair ke villager terlebih dahulu!"));
           }
         }
       }

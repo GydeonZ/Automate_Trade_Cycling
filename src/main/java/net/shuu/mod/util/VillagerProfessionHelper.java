@@ -1,9 +1,9 @@
 package net.shuu.mod.util;
 
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,33 +59,33 @@ public class VillagerProfessionHelper {
    * Mendapatkan nama display profesi
    */
   public static String getProfessionDisplayName(ResourceKey<VillagerProfession> profession) {
-    if (VillagerProfession.ARMORER.equals(profession))
+    if (profession == VillagerProfession.ARMORER)
       return "Armorer";
-    if (VillagerProfession.BUTCHER.equals(profession))
+    if (profession == VillagerProfession.BUTCHER)
       return "Butcher";
-    if (VillagerProfession.CARTOGRAPHER.equals(profession))
+    if (profession == VillagerProfession.CARTOGRAPHER)
       return "Cartographer";
-    if (VillagerProfession.CLERIC.equals(profession))
+    if (profession == VillagerProfession.CLERIC)
       return "Cleric";
-    if (VillagerProfession.FARMER.equals(profession))
+    if (profession == VillagerProfession.FARMER)
       return "Farmer";
-    if (VillagerProfession.FISHERMAN.equals(profession))
+    if (profession == VillagerProfession.FISHERMAN)
       return "Fisherman";
-    if (VillagerProfession.FLETCHER.equals(profession))
+    if (profession == VillagerProfession.FLETCHER)
       return "Fletcher";
-    if (VillagerProfession.LEATHERWORKER.equals(profession))
+    if (profession == VillagerProfession.LEATHERWORKER)
       return "Leatherworker";
-    if (VillagerProfession.LIBRARIAN.equals(profession))
+    if (profession == VillagerProfession.LIBRARIAN)
       return "Librarian";
-    if (VillagerProfession.MASON.equals(profession))
+    if (profession == VillagerProfession.MASON)
       return "Mason";
-    if (VillagerProfession.SHEPHERD.equals(profession))
+    if (profession == VillagerProfession.SHEPHERD)
       return "Shepherd";
-    if (VillagerProfession.TOOLSMITH.equals(profession))
+    if (profession == VillagerProfession.TOOLSMITH)
       return "Toolsmith";
-    if (VillagerProfession.WEAPONSMITH.equals(profession))
+    if (profession == VillagerProfession.WEAPONSMITH)
       return "Weaponsmith";
-    if (VillagerProfession.NITWIT.equals(profession))
+    if (profession == VillagerProfession.NITWIT)
       return "Nitwit";
     return "Unemployed";
   }

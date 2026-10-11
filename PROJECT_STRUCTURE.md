@@ -137,16 +137,16 @@ Automate Trade Cycling/
 
 ### Dependencies
 ```gradle
-Minecraft: 26.3
-Fabric Loader: >=0.19.5
-Fabric API: 0.162.0+26.3
-Java: 25+
+Minecraft: 1.21.1
+Fabric Loader: >=0.18.4
+Fabric API: Latest
+Java: 21+
 ```
 
 ### Mixins
 ```json
 VillagerEntityMixin:
-  - Target: Villager.tick()
+  - Target: VillagerEntity.tick()
   - Purpose: Monitor villager state changes
   - Injection: TAIL
 ```

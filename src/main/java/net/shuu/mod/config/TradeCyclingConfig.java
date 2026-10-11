@@ -1,10 +1,10 @@
 package net.shuu.mod.config;
 
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.npc.villager.VillagerProfession;
-import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import java.util.*;
 
 public class TradeCyclingConfig {
@@ -155,18 +155,18 @@ public class TradeCyclingConfig {
         Items.GLASS, Items.NAME_TAG, Items.LANTERN));
 
     // MASON (STONE MASON)
-    // Sejak 26.x, item berwarna disimpan dalam ColorCollection
     tradeables.put(VillagerProfession.MASON, Arrays.asList(
         Items.BRICK, Items.CLAY_BALL, Items.DRIPSTONE_BLOCK, Items.POLISHED_ANDESITE,
         Items.POLISHED_DIORITE, Items.POLISHED_GRANITE, Items.QUARTZ, Items.TERRACOTTA,
-        Items.GLAZED_TERRACOTTA.pick(DyeColor.WHITE), Items.GLAZED_TERRACOTTA.pick(DyeColor.RED)));
+        Items.GLAZED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.WHITE), Items.GLAZED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.RED)));
 
     // SHEPHERD
-    List<Item> shepherdTradeables = new ArrayList<>(Arrays.asList(Items.PAINTING));
-    shepherdTradeables.addAll(Items.WOOL.asList()); // semua warna wool
-    shepherdTradeables.add(Items.BED.pick(DyeColor.WHITE));
-    shepherdTradeables.add(Items.BANNER.pick(DyeColor.WHITE));
-    tradeables.put(VillagerProfession.SHEPHERD, shepherdTradeables);
+    tradeables.put(VillagerProfession.SHEPHERD, Arrays.asList(
+        Items.WOOL.pick(net.minecraft.world.item.DyeColor.WHITE), Items.WOOL.pick(net.minecraft.world.item.DyeColor.ORANGE), Items.WOOL.pick(net.minecraft.world.item.DyeColor.MAGENTA), Items.WOOL.pick(net.minecraft.world.item.DyeColor.LIGHT_BLUE),
+        Items.WOOL.pick(net.minecraft.world.item.DyeColor.YELLOW), Items.WOOL.pick(net.minecraft.world.item.DyeColor.LIME), Items.WOOL.pick(net.minecraft.world.item.DyeColor.PINK), Items.WOOL.pick(net.minecraft.world.item.DyeColor.GRAY),
+        Items.WOOL.pick(net.minecraft.world.item.DyeColor.LIGHT_GRAY), Items.WOOL.pick(net.minecraft.world.item.DyeColor.CYAN), Items.WOOL.pick(net.minecraft.world.item.DyeColor.PURPLE), Items.WOOL.pick(net.minecraft.world.item.DyeColor.BLUE),
+        Items.WOOL.pick(net.minecraft.world.item.DyeColor.BROWN), Items.WOOL.pick(net.minecraft.world.item.DyeColor.GREEN), Items.WOOL.pick(net.minecraft.world.item.DyeColor.RED), Items.WOOL.pick(net.minecraft.world.item.DyeColor.BLACK),
+        Items.BED.pick(net.minecraft.world.item.DyeColor.WHITE), Items.PAINTING, Items.BANNER.pick(net.minecraft.world.item.DyeColor.WHITE)));
 
     // TOOLSMITH
     tradeables.put(VillagerProfession.TOOLSMITH, Arrays.asList(

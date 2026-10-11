@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.shuu.mod.network.CycleTradesPacket;
+import net.shuu.mod.network.OpenVillagerTradePacket;
 import net.shuu.mod.network.PacketHandler;
 
 import org.slf4j.Logger;
@@ -26,13 +27,20 @@ public class AutomateTradeCycling implements ModInitializer {
 	}
 
 	private void registerPackets() {
-		// Register payload type (client -> server)
-		PayloadTypeRegistry.serverboundPlay().register(CycleTradesPacket.TYPE, CycleTradesPacket.CODEC);
+		// Register payload type
+		PayloadTypeRegistry.serverboundPlay().register(CycleTradesPacket.ID, CycleTradesPacket.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(OpenVillagerTradePacket.ID, OpenVillagerTradePacket.CODEC);
 
 		// Register server-side packet handler
-		ServerPlayNetworking.registerGlobalReceiver(CycleTradesPacket.TYPE, (payload, context) -> {
+		ServerPlayNetworking.registerGlobalReceiver(CycleTradesPacket.ID, (payload, context) -> {
 			context.server().execute(() -> {
 				PacketHandler.onCycleTrades(context.player());
+			});
+		});
+
+		ServerPlayNetworking.registerGlobalReceiver(OpenVillagerTradePacket.ID, (payload, context) -> {
+			context.server().execute(() -> {
+				PacketHandler.openVillagerTrade(context.player(), payload.entityId());
 			});
 		});
 

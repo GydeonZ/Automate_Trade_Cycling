@@ -1,7 +1,7 @@
 package net.shuu.mod.config;
 
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.resources.ResourceKey;
 
 import java.util.Objects;
 

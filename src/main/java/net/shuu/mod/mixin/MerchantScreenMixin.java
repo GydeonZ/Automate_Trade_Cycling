@@ -15,13 +15,11 @@ public class MerchantScreenMixin {
 
   @Unique
   private int checkDelay = 0;
-
   @Unique
-  private static final int CHECK_INTERVAL = 10; // Check setiap 10 frame (0.5 detik)
+  private static final int CHECK_INTERVAL = 10; // Check setiap 10 ticks (0.5 detik)
 
   /**
-   * Hook ke extractContents method untuk check trade offers
-   * MerchantScreen mengekstrak isinya setiap frame saat screen terbuka
+   * Hook ke render method untuk check trade offers setiap frame
    */
   @Inject(method = "extractContents", at = @At("HEAD"))
   private void onExtractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
@@ -45,7 +43,7 @@ public class MerchantScreenMixin {
 
       if (offers != null && !offers.isEmpty()) {
         net.shuu.mod.AutomateTradeCycling.LOGGER
-            .info("[MIXIN] Checking offers from extractContents, offers count: " + offers.size());
+            .info("[MIXIN] Checking offers from render, offers count: " + offers.size());
         boolean found = manager.checkCurrentOffers(offers);
 
         if (found) {

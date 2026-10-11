@@ -1,15 +1,16 @@
 package net.shuu.mod.screen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.Item;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.shuu.mod.config.TradeCyclingConfig;
 import net.shuu.mod.manager.TradeCyclingManager;
 import net.shuu.mod.util.VillagerProfessionHelper;
@@ -32,7 +33,7 @@ public class ItemSelectionScreen extends Screen {
   public ItemSelectionScreen(Villager villager) {
     super(Component.literal("Pilih Item untuk Trade Cycling"));
     this.villager = villager;
-    this.profession = TradeCyclingManager.getProfessionKey(villager);
+    this.profession = villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE);
 
     // Ambil daftar item yang bisa dijual profesi ini
     Map<ResourceKey<VillagerProfession>, List<Item>> tradeables = TradeCyclingConfig.getProfessionTradeables();
@@ -60,6 +61,9 @@ public class ItemSelectionScreen extends Screen {
         TradeCyclingConfig.getInstance().setDesiredItems(profession, selectedItems);
         TradeCyclingManager.getInstance().startCycling(villager);
         this.onClose();
+        TradeCyclingManager.getInstance().openTradeScreenAfterSelection(villager);
+      } else if (this.minecraft != null && this.minecraft.player != null) {
+        this.minecraft.player.sendOverlayMessage(Component.literal("Pilih minimal satu item terlebih dahulu."));
       }
     })
         .bounds(this.width / 2 - buttonWidth - buttonSpacing / 2, buttonY, buttonWidth, 20)
@@ -90,7 +94,8 @@ public class ItemSelectionScreen extends Screen {
 
   @Override
   public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-    // Render widgets (buttons)
+    // Screen.extractRenderState also extracts the background. Calling
+    // extractBackground separately would request the blur twice in one frame.
     super.extractRenderState(context, mouseX, mouseY, delta);
 
     // Title
@@ -121,6 +126,7 @@ public class ItemSelectionScreen extends Screen {
     int startX = this.width / 2 - (ITEMS_PER_ROW * ITEM_SPACING) / 2;
     int startY = 55;
 
+    int index = 0;
     for (int row = scrollOffset; row < Math.min(scrollOffset + 4,
         (int) Math.ceil((double) availableItems.size() / ITEMS_PER_ROW)); row++) {
       for (int col = 0; col < ITEMS_PER_ROW; col++) {
@@ -129,7 +135,6 @@ public class ItemSelectionScreen extends Screen {
           break;
 
         Item item = availableItems.get(itemIndex);
-        ItemStack stack = new ItemStack(item);
         int x = startX + col * ITEM_SPACING;
         int y = startY + (row - scrollOffset) * ITEM_SPACING;
 
@@ -140,14 +145,14 @@ public class ItemSelectionScreen extends Screen {
         context.fill(x, y, x + ITEM_SIZE, y + ITEM_SIZE, 0xFF373737);
 
         // Draw item
-        context.item(stack, x + 2, y + 2);
+        context.item(new ItemStack(item), x + 2, y + 2);
 
         // Highlight on hover
         if (mouseX >= x && mouseX < x + ITEM_SIZE && mouseY >= y && mouseY < y + ITEM_SIZE) {
           context.fill(x, y, x + ITEM_SIZE, y + ITEM_SIZE, 0x80FFFFFF);
 
           // Draw tooltip
-          context.setTooltipForNextFrame(this.font, stack, mouseX, mouseY);
+          context.setTooltipForNextFrame(this.font, item.getName(new ItemStack(item)), mouseX, mouseY);
         }
       }
     }
@@ -155,11 +160,11 @@ public class ItemSelectionScreen extends Screen {
 
   @Override
   public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+    double mouseX = event.x();
+    double mouseY = event.y();
     if (event.button() == 0) { // Left click
       int startX = this.width / 2 - (ITEMS_PER_ROW * ITEM_SPACING) / 2;
       int startY = 55;
-      double mouseX = event.x();
-      double mouseY = event.y();
 
       for (int row = scrollOffset; row < Math.min(scrollOffset + 4,
           (int) Math.ceil((double) availableItems.size() / ITEMS_PER_ROW)); row++) {

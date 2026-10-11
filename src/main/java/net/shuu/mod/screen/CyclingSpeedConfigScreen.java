@@ -1,13 +1,13 @@
 package net.shuu.mod.screen;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.shuu.mod.manager.TradeCyclingManager;
 
 /**
@@ -41,7 +41,7 @@ public class CyclingSpeedConfigScreen extends Screen {
         Component.literal("Speed"));
     speedField.setValue(String.valueOf(speedMs));
     speedField.setMaxLength(5);
-    speedField.setCanLoseFocus(true);
+    speedField.setFocused(true);
     this.addRenderableWidget(speedField);
     this.setInitialFocus(speedField);
 
@@ -75,8 +75,8 @@ public class CyclingSpeedConfigScreen extends Screen {
 
       // Validate range (50ms to 10000ms)
       if (speed < 50 || speed > 10000) {
-        if (this.minecraft.player != null) {
-          this.minecraft.player.sendSystemMessage(Component.literal("§cSpeed must be between 50ms and 10000ms!"));
+        if (this.minecraft != null && this.minecraft.player != null) {
+          this.minecraft.player.sendOverlayMessage(Component.literal("§cSpeed must be between 50ms and 10000ms!"));
         }
         return false;
       }
@@ -84,15 +84,14 @@ public class CyclingSpeedConfigScreen extends Screen {
       // Apply changes
       TradeCyclingManager.getInstance().setCyclingDelayMs(speed);
 
-      if (this.minecraft.player != null) {
+      if (this.minecraft != null && this.minecraft.player != null) {
         this.minecraft.player
-            .sendSystemMessage(
-                Component.literal("§aCycling speed updated to " + speed + "ms (" + (speed / 1000.0) + "s)"));
+            .sendOverlayMessage(Component.literal("§aCycling speed updated to " + speed + "ms (" + (speed / 1000.0) + "s)"));
       }
       return true;
     } catch (NumberFormatException e) {
-      if (this.minecraft.player != null) {
-        this.minecraft.player.sendSystemMessage(Component.literal("§cInvalid number format!"));
+      if (this.minecraft != null && this.minecraft.player != null) {
+        this.minecraft.player.sendOverlayMessage(Component.literal("§cInvalid number format!"));
       }
       return false;
     }
@@ -113,6 +112,9 @@ public class CyclingSpeedConfigScreen extends Screen {
     context.centeredText(this.font,
         Component.literal("§e⏱ Cycling Speed (milliseconds):"),
         centerX, startY - 20, 0xFFFFFF);
+
+    // Render text field on top
+
 
     // Instructions
     context.centeredText(this.font,
@@ -153,10 +155,8 @@ public class CyclingSpeedConfigScreen extends Screen {
 
   @Override
   public void onClose() {
-    if (parent != null) {
+    if (this.minecraft != null) {
       this.minecraft.setScreenAndShow(parent);
-    } else {
-      super.onClose();
     }
   }
 

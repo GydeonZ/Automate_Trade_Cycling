@@ -2,29 +2,29 @@ package net.shuu.mod.manager;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.Holder;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.npc.villager.VillagerProfession;
-import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.Holder;
+import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.shuu.mod.AutomateTradeCycling;
 import net.shuu.mod.config.EnchantmentWithLevel;
 import net.shuu.mod.config.TradeCyclingConfig;
 import net.shuu.mod.network.CycleTradesPacket;
+import net.shuu.mod.network.OpenVillagerTradePacket;
 import net.shuu.mod.util.VillagerProfessionHelper;
 
-import java.util.Optional;
 import java.util.Set;
 
 public class TradeCyclingManager {
@@ -59,21 +59,13 @@ public class TradeCyclingManager {
     return cyclingDelayMs / 50; // Convert ms to ticks (1000ms = 20 ticks)
   }
 
-  /**
-   * Ambil ResourceKey profesi dari villager (profesi sekarang disimpan sebagai
-   * Holder di VillagerData)
-   */
-  public static ResourceKey<VillagerProfession> getProfessionKey(Villager villager) {
-    return villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE);
-  }
-
   public void startCycling(Villager villager) {
     if (villager == null) {
       AutomateTradeCycling.LOGGER.warn("Cannot start cycling: villager is null");
       return;
     }
 
-    ResourceKey<VillagerProfession> profession = getProfessionKey(villager);
+    ResourceKey<VillagerProfession> profession = villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE);
     TradeCyclingConfig config = TradeCyclingConfig.getInstance();
 
     // Check if it's Librarian with enchantments OR other profession with items
@@ -83,7 +75,7 @@ public class TradeCyclingManager {
     if (!hasDesiredItems && !hasDesiredEnchantments) {
       Minecraft client = Minecraft.getInstance();
       if (client.player != null) {
-        client.player.sendSystemMessage(Component.literal("§cTidak ada item/enchantment yang dicari untuk profesi " +
+        client.player.sendOverlayMessage(Component.literal("§cTidak ada item/enchantment yang dicari untuk profesi " +
             VillagerProfessionHelper.getProfessionDisplayName(profession) + "!"));
       }
       return;
@@ -100,17 +92,17 @@ public class TradeCyclingManager {
       if (hasDesiredEnchantments) {
         // Librarian with enchantments
         int enchantCount = config.getDesiredEnchantments(profession).size();
-        client.player.sendSystemMessage(Component.literal("§a§l[CYCLING AKTIF]"));
-        client.player.sendSystemMessage(Component.literal("§eMencari " + enchantCount + " enchantment untuk " +
+        client.player.sendOverlayMessage(Component.literal("§a§l[CYCLING AKTIF]"));
+        client.player.sendOverlayMessage(Component.literal("§eMencari " + enchantCount + " enchantment untuk " +
             VillagerProfessionHelper.getProfessionDisplayName(profession)));
       } else {
         // Other professions with items
         Set<Item> desiredItems = config.getDesiredItems(profession);
-        client.player.sendSystemMessage(Component.literal("§a§l[CYCLING AKTIF]"));
-        client.player.sendSystemMessage(Component.literal("§eMencari " + desiredItems.size() + " item untuk " +
+        client.player.sendOverlayMessage(Component.literal("§a§l[CYCLING AKTIF]"));
+        client.player.sendOverlayMessage(Component.literal("§eMencari " + desiredItems.size() + " item untuk " +
             VillagerProfessionHelper.getProfessionDisplayName(profession)));
       }
-      client.player.sendSystemMessage(Component.literal("§7Klik kanan villager untuk memulai..."));
+      client.player.sendOverlayMessage(Component.literal("§7Cycling berjalan saat layar trade villager terbuka."));
     }
 
     AutomateTradeCycling.LOGGER.info("Started trade cycling for profession: " + profession);
@@ -144,7 +136,7 @@ public class TradeCyclingManager {
     // Cek apakah villager masih valid
     if (!targetVillager.isAlive() || targetVillager.isRemoved()) {
       stopCycling();
-      client.player.sendSystemMessage(Component.literal("§cVillager hilang atau mati!"));
+      client.player.sendOverlayMessage(Component.literal("§cVillager hilang atau mati!"));
       return;
     }
 
@@ -155,7 +147,7 @@ public class TradeCyclingManager {
     }
 
     // Cek apakah player sedang membuka merchant screen dengan target villager
-    if (client.player.containerMenu instanceof MerchantMenu) {
+    if (client.player.containerMenu instanceof MerchantMenu merchantHandler) {
       // Kirim packet cycling ke server
       AutomateTradeCycling.LOGGER
           .info("[TICK] Sending cycle packet, isSearching: " + isSearching + ", foundDesiredItem: " + foundDesiredItem
@@ -165,11 +157,21 @@ public class TradeCyclingManager {
     }
   }
 
+  /** Ask the server to open the selected villager's vanilla merchant screen. */
+  public void openTradeScreenAfterSelection(Villager villager) {
+    if (villager != null && ClientPlayNetworking.canSend(OpenVillagerTradePacket.ID)) {
+      ClientPlayNetworking.send(new OpenVillagerTradePacket(villager.getId()));
+      AutomateTradeCycling.LOGGER.info("Sent request to open villager merchant screen");
+    } else {
+      AutomateTradeCycling.LOGGER.warn("Cannot request villager merchant screen from server");
+    }
+  }
+
   /**
    * Kirim packet cycling ke server
    */
   private void sendCyclePacket() {
-    if (ClientPlayNetworking.canSend(CycleTradesPacket.TYPE)) {
+    if (ClientPlayNetworking.canSend(CycleTradesPacket.ID)) {
       ClientPlayNetworking.send(new CycleTradesPacket());
       AutomateTradeCycling.LOGGER.info("Sent cycle trades packet to server");
     } else {
@@ -195,7 +197,7 @@ public class TradeCyclingManager {
       return false;
     }
 
-    ResourceKey<VillagerProfession> profession = getProfessionKey(targetVillager);
+    ResourceKey<VillagerProfession> profession = targetVillager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE);
     TradeCyclingConfig config = TradeCyclingConfig.getInstance();
 
     // Check if we're looking for enchantments (Librarian) or regular items
@@ -209,22 +211,20 @@ public class TradeCyclingManager {
     // Cek apakah ada item/enchantment yang diinginkan di trade offers
     for (MerchantOffer offer : offers) {
       // Safety check untuk offer yang valid
-      if (offer == null || offer.isOutOfStock()) {
+      if (offer == null || offer.isOutOfStock() || offer.getResult() == null) {
         continue;
       }
 
-      ItemStack sellStack = offer.getResult();
+      Item sellItem = offer.getResult().getItem();
 
       // Safety check untuk item yang valid
-      if (sellStack == null || sellStack.isEmpty()) {
+      if (sellItem == null) {
         continue;
       }
-
-      Item sellItem = sellStack.getItem();
 
       // Check for enchanted books with specific enchantments
       if (sellItem == Items.ENCHANTED_BOOK && !desiredEnchantments.isEmpty()) {
-        ItemEnchantments enchantments = sellStack.get(DataComponents.STORED_ENCHANTMENTS);
+        ItemEnchantments enchantments = offer.getResult().get(DataComponents.STORED_ENCHANTMENTS);
 
         if (enchantments != null) {
           for (Holder<Enchantment> enchantmentEntry : enchantments.keySet()) {
@@ -232,11 +232,11 @@ public class TradeCyclingManager {
             int level = enchantments.getLevel(enchantmentEntry);
 
             // Check if this enchantment matches our filter
-            Optional<ResourceKey<Enchantment>> enchantmentKey = enchantmentEntry.unwrapKey();
+            if (enchantmentEntry.unwrapKey().isPresent()) {
+              ResourceKey<Enchantment> enchantmentKey = enchantmentEntry.unwrapKey().get();
 
-            if (enchantmentKey.isPresent()) {
               for (EnchantmentWithLevel desired : desiredEnchantments) {
-                if (desired.getEnchantment().equals(enchantmentKey.get()) && desired.matchesLevel(level)) {
+                if (desired.getEnchantment().equals(enchantmentKey) && desired.matchesLevel(level)) {
                   // FOUND enchantment with matching level!
                   String enchantName;
                   try {
@@ -255,11 +255,11 @@ public class TradeCyclingManager {
                   this.foundDesiredItem = true;
                   stopCycling();
 
-                  client.player.sendSystemMessage(Component.literal("§a§l========================================"));
-                  client.player.sendSystemMessage(Component.literal("§a§l[DITEMUKAN!] §r§a" + enchantName));
-                  client.player.sendSystemMessage(Component.literal("§a§l========================================"));
-                  client.player.sendSystemMessage(Component.literal("§eEnchantment tersedia untuk trade!"));
-                  client.player.sendSystemMessage(Component.literal("§7Cycling dihentikan."));
+                  client.player.sendOverlayMessage(Component.literal("§a§l========================================"));
+                  client.player.sendOverlayMessage(Component.literal("§a§l[DITEMUKAN!] §r§a" + enchantName));
+                  client.player.sendOverlayMessage(Component.literal("§a§l========================================"));
+                  client.player.sendOverlayMessage(Component.literal("§eEnchantment tersedia untuk trade!"));
+                  client.player.sendOverlayMessage(Component.literal("§7Cycling dihentikan."));
 
                   AutomateTradeCycling.LOGGER.info("[CHECK_OFFERS] Returning true, cycling should be stopped now");
                   return true;
@@ -275,17 +275,17 @@ public class TradeCyclingManager {
         // Dapatkan nama item dengan aman
         String itemName;
         try {
-          itemName = sellStack.getHoverName().getString();
+          itemName = offer.getResult().getHoverName().getString();
         } catch (Exception e) {
           itemName = "Unknown Item";
           AutomateTradeCycling.LOGGER.warn("Failed to get item name: " + e.getMessage());
         }
 
-        client.player.sendSystemMessage(Component.literal("§a§l========================================"));
-        client.player.sendSystemMessage(Component.literal("§a§l[DITEMUKAN!] §r§a" + itemName));
-        client.player.sendSystemMessage(Component.literal("§a§l========================================"));
-        client.player.sendSystemMessage(Component.literal("§eItem tersedia untuk trade!"));
-        client.player.sendSystemMessage(Component.literal("§7Cycling dihentikan."));
+        client.player.sendOverlayMessage(Component.literal("§a§l========================================"));
+        client.player.sendOverlayMessage(Component.literal("§a§l[DITEMUKAN!] §r§a" + itemName));
+        client.player.sendOverlayMessage(Component.literal("§a§l========================================"));
+        client.player.sendOverlayMessage(Component.literal("§eItem tersedia untuk trade!"));
+        client.player.sendOverlayMessage(Component.literal("§7Cycling dihentikan."));
 
         AutomateTradeCycling.LOGGER.info("Found desired item: " + itemName);
 
@@ -320,8 +320,8 @@ public class TradeCyclingManager {
     HitResult hitResult = client.hitResult;
     if (hitResult.getType() == HitResult.Type.ENTITY) {
       EntityHitResult entityHit = (EntityHitResult) hitResult;
-      if (entityHit.getEntity() instanceof Villager villager) {
-        return villager;
+      if (entityHit.getEntity() instanceof Villager) {
+        return (Villager) entityHit.getEntity();
       }
     }
 
