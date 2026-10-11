@@ -1,14 +1,15 @@
 package net.shuu.mod.screen;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.shuu.mod.config.TradeCyclingConfig;
 import net.shuu.mod.manager.TradeCyclingManager;
 import net.shuu.mod.util.VillagerProfessionHelper;
@@ -16,8 +17,8 @@ import net.shuu.mod.util.VillagerProfessionHelper;
 import java.util.*;
 
 public class ItemSelectionScreen extends Screen {
-  private final VillagerEntity villager;
-  private final VillagerProfession profession;
+  private final Villager villager;
+  private final ResourceKey<VillagerProfession> profession;
   private final List<Item> availableItems;
   private final Set<Item> selectedItems;
 
@@ -28,13 +29,13 @@ public class ItemSelectionScreen extends Screen {
   private int scrollOffset = 0;
   private final int maxScroll;
 
-  public ItemSelectionScreen(VillagerEntity villager) {
-    super(Text.literal("Pilih Item untuk Trade Cycling"));
+  public ItemSelectionScreen(Villager villager) {
+    super(Component.literal("Pilih Item untuk Trade Cycling"));
     this.villager = villager;
-    this.profession = villager.getVillagerData().getProfession();
+    this.profession = TradeCyclingManager.getProfessionKey(villager);
 
     // Ambil daftar item yang bisa dijual profesi ini
-    Map<VillagerProfession, List<Item>> tradeables = TradeCyclingConfig.getProfessionTradeables();
+    Map<ResourceKey<VillagerProfession>, List<Item>> tradeables = TradeCyclingConfig.getProfessionTradeables();
     this.availableItems = tradeables.getOrDefault(profession, new ArrayList<>());
 
     // Load item yang sudah dipilih sebelumnya
@@ -54,76 +55,72 @@ public class ItemSelectionScreen extends Screen {
     int buttonSpacing = 10;
 
     // Tombol Start Cycling
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Start Cycling"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("Start Cycling"), button -> {
       if (!selectedItems.isEmpty()) {
         TradeCyclingConfig.getInstance().setDesiredItems(profession, selectedItems);
         TradeCyclingManager.getInstance().startCycling(villager);
-        this.close();
+        this.onClose();
       }
     })
-        .dimensions(this.width / 2 - buttonWidth - buttonSpacing / 2, buttonY, buttonWidth, 20)
+        .bounds(this.width / 2 - buttonWidth - buttonSpacing / 2, buttonY, buttonWidth, 20)
         .build());
 
     // Tombol Cancel
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), button -> {
-      this.close();
+    this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> {
+      this.onClose();
     })
-        .dimensions(this.width / 2 + buttonSpacing / 2, buttonY, buttonWidth, 20)
+        .bounds(this.width / 2 + buttonSpacing / 2, buttonY, buttonWidth, 20)
         .build());
 
     // Tombol Clear All
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Clear All"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("Clear All"), button -> {
       selectedItems.clear();
     })
-        .dimensions(10, this.height - 40, 80, 20)
+        .bounds(10, this.height - 40, 80, 20)
         .build());
 
     // Tombol Select All
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Select All"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("Select All"), button -> {
       selectedItems.clear();
       selectedItems.addAll(availableItems);
     })
-        .dimensions(100, this.height - 40, 80, 20)
+        .bounds(100, this.height - 40, 80, 20)
         .build());
   }
 
   @Override
-  public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-    // Render background dengan opsi yang benar untuk Minecraft 1.21.1
-    this.renderBackground(context, mouseX, mouseY, delta);
-
-    // Render widgets (buttons) setelah background
-    super.render(context, mouseX, mouseY, delta);
+  public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    // Render widgets (buttons)
+    super.extractRenderState(context, mouseX, mouseY, delta);
 
     // Title
-    context.drawCenteredTextWithShadow(this.textRenderer, this.title,
+    context.centeredText(this.font, this.title,
         this.width / 2, 15, 0xFFFFFF);
 
     // Profession name
     String professionName = VillagerProfessionHelper.getProfessionDisplayName(profession);
-    context.drawCenteredTextWithShadow(this.textRenderer,
-        Text.literal("Profesi: " + professionName),
+    context.centeredText(this.font,
+        Component.literal("Profesi: " + professionName),
         this.width / 2, 30, 0xFFFF00);
 
     // Selected items count
-    context.drawTextWithShadow(this.textRenderer,
-        Text.literal("§aDipilih: " + selectedItems.size() + "/" + availableItems.size()),
+    context.text(this.font,
+        Component.literal("§aDipilih: " + selectedItems.size() + "/" + availableItems.size()),
         10, 10, 0xFFFFFF);
 
     // Item grid
     renderItemGrid(context, mouseX, mouseY);
 
     // Instructions
-    context.drawCenteredTextWithShadow(this.textRenderer,
-        Text.literal("§7Klik item untuk memilih/membatalkan pilihan"),
+    context.centeredText(this.font,
+        Component.literal("§7Klik item untuk memilih/membatalkan pilihan"),
         this.width / 2, this.height - 60, 0xFFFFFF);
   }
 
-  private void renderItemGrid(DrawContext context, int mouseX, int mouseY) {
+  private void renderItemGrid(GuiGraphicsExtractor context, int mouseX, int mouseY) {
     int startX = this.width / 2 - (ITEMS_PER_ROW * ITEM_SPACING) / 2;
     int startY = 55;
 
-    int index = 0;
     for (int row = scrollOffset; row < Math.min(scrollOffset + 4,
         (int) Math.ceil((double) availableItems.size() / ITEMS_PER_ROW)); row++) {
       for (int col = 0; col < ITEMS_PER_ROW; col++) {
@@ -132,6 +129,7 @@ public class ItemSelectionScreen extends Screen {
           break;
 
         Item item = availableItems.get(itemIndex);
+        ItemStack stack = new ItemStack(item);
         int x = startX + col * ITEM_SPACING;
         int y = startY + (row - scrollOffset) * ITEM_SPACING;
 
@@ -142,24 +140,26 @@ public class ItemSelectionScreen extends Screen {
         context.fill(x, y, x + ITEM_SIZE, y + ITEM_SIZE, 0xFF373737);
 
         // Draw item
-        context.drawItem(new ItemStack(item), x + 2, y + 2);
+        context.item(stack, x + 2, y + 2);
 
         // Highlight on hover
         if (mouseX >= x && mouseX < x + ITEM_SIZE && mouseY >= y && mouseY < y + ITEM_SIZE) {
           context.fill(x, y, x + ITEM_SIZE, y + ITEM_SIZE, 0x80FFFFFF);
 
           // Draw tooltip
-          context.drawTooltip(this.textRenderer, item.getName(), mouseX, mouseY);
+          context.setTooltipForNextFrame(this.font, stack, mouseX, mouseY);
         }
       }
     }
   }
 
   @Override
-  public boolean mouseClicked(double mouseX, double mouseY, int button) {
-    if (button == 0) { // Left click
+  public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+    if (event.button() == 0) { // Left click
       int startX = this.width / 2 - (ITEMS_PER_ROW * ITEM_SPACING) / 2;
       int startY = 55;
+      double mouseX = event.x();
+      double mouseY = event.y();
 
       for (int row = scrollOffset; row < Math.min(scrollOffset + 4,
           (int) Math.ceil((double) availableItems.size() / ITEMS_PER_ROW)); row++) {
@@ -184,7 +184,7 @@ public class ItemSelectionScreen extends Screen {
       }
     }
 
-    return super.mouseClicked(mouseX, mouseY, button);
+    return super.mouseClicked(event, doubleClick);
   }
 
   @Override
@@ -198,7 +198,7 @@ public class ItemSelectionScreen extends Screen {
   }
 
   @Override
-  public boolean shouldPause() {
+  public boolean isPauseScreen() {
     return true;
   }
 }

@@ -1,15 +1,16 @@
 package net.shuu.mod.util;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class VillagerProfessionHelper {
 
-  private static final Map<VillagerProfession, Block> PROFESSION_JOB_SITES = new HashMap<>();
+  private static final Map<ResourceKey<VillagerProfession>, Block> PROFESSION_JOB_SITES = new HashMap<>();
 
   static {
     // Map profesi ke job site block mereka
@@ -31,15 +32,15 @@ public class VillagerProfessionHelper {
   /**
    * Mendapatkan job site block untuk profesi tertentu
    */
-  public static Block getJobSiteForProfession(VillagerProfession profession) {
+  public static Block getJobSiteForProfession(ResourceKey<VillagerProfession> profession) {
     return PROFESSION_JOB_SITES.get(profession);
   }
 
   /**
    * Mendapatkan profesi dari job site block
    */
-  public static VillagerProfession getProfessionFromJobSite(Block block) {
-    for (Map.Entry<VillagerProfession, Block> entry : PROFESSION_JOB_SITES.entrySet()) {
+  public static ResourceKey<VillagerProfession> getProfessionFromJobSite(Block block) {
+    for (Map.Entry<ResourceKey<VillagerProfession>, Block> entry : PROFESSION_JOB_SITES.entrySet()) {
       if (entry.getValue() == block) {
         return entry.getKey();
       }
@@ -57,34 +58,34 @@ public class VillagerProfessionHelper {
   /**
    * Mendapatkan nama display profesi
    */
-  public static String getProfessionDisplayName(VillagerProfession profession) {
-    if (profession == VillagerProfession.ARMORER)
+  public static String getProfessionDisplayName(ResourceKey<VillagerProfession> profession) {
+    if (VillagerProfession.ARMORER.equals(profession))
       return "Armorer";
-    if (profession == VillagerProfession.BUTCHER)
+    if (VillagerProfession.BUTCHER.equals(profession))
       return "Butcher";
-    if (profession == VillagerProfession.CARTOGRAPHER)
+    if (VillagerProfession.CARTOGRAPHER.equals(profession))
       return "Cartographer";
-    if (profession == VillagerProfession.CLERIC)
+    if (VillagerProfession.CLERIC.equals(profession))
       return "Cleric";
-    if (profession == VillagerProfession.FARMER)
+    if (VillagerProfession.FARMER.equals(profession))
       return "Farmer";
-    if (profession == VillagerProfession.FISHERMAN)
+    if (VillagerProfession.FISHERMAN.equals(profession))
       return "Fisherman";
-    if (profession == VillagerProfession.FLETCHER)
+    if (VillagerProfession.FLETCHER.equals(profession))
       return "Fletcher";
-    if (profession == VillagerProfession.LEATHERWORKER)
+    if (VillagerProfession.LEATHERWORKER.equals(profession))
       return "Leatherworker";
-    if (profession == VillagerProfession.LIBRARIAN)
+    if (VillagerProfession.LIBRARIAN.equals(profession))
       return "Librarian";
-    if (profession == VillagerProfession.MASON)
+    if (VillagerProfession.MASON.equals(profession))
       return "Mason";
-    if (profession == VillagerProfession.SHEPHERD)
+    if (VillagerProfession.SHEPHERD.equals(profession))
       return "Shepherd";
-    if (profession == VillagerProfession.TOOLSMITH)
+    if (VillagerProfession.TOOLSMITH.equals(profession))
       return "Toolsmith";
-    if (profession == VillagerProfession.WEAPONSMITH)
+    if (VillagerProfession.WEAPONSMITH.equals(profession))
       return "Weaponsmith";
-    if (profession == VillagerProfession.NITWIT)
+    if (VillagerProfession.NITWIT.equals(profession))
       return "Nitwit";
     return "Unemployed";
   }

@@ -2,6 +2,20 @@
 
 All notable changes to the Automate Trade Cycling mod will be documented in this file.
 
+## [1.1.0] - 2026-10-11
+
+### Changed
+- 🔼 Updated to Minecraft 26.3 ("Wilderness Bound")
+- 🧱 Migrated to Mojang's official mappings (Minecraft is no longer obfuscated since 1.21.11)
+- ☕ Requires Java 25 (up from Java 21)
+- 🧩 Updated Fabric Loader to 0.19.5 and Fabric API to 0.162.0+26.3
+- 🖥️ Ported the GUI to the new extract-based rendering API (`GuiGraphicsExtractor`)
+- 🏷️ Updated villager professions/enchantments to the new `ResourceKey`/`Holder` based registries
+- ⌨️ Keybind category now registers through `KeyMapping.Category`
+
+### Removed
+- 🧹 Dropped the leftover example mixin that targeted the removed `MinecraftServer.loadWorld`
+
 ## [1.0.0] - 2026-01-12
 
 ### Added

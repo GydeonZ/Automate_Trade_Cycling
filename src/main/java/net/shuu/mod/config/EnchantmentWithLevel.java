@@ -1,7 +1,7 @@
 package net.shuu.mod.config;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 import java.util.Objects;
 
@@ -9,21 +9,21 @@ import java.util.Objects;
  * Class untuk menyimpan enchantment beserta level yang diinginkan
  */
 public class EnchantmentWithLevel {
-  private final RegistryKey<Enchantment> enchantment;
+  private final ResourceKey<Enchantment> enchantment;
   private final int minLevel;
   private final int maxLevel;
 
-  public EnchantmentWithLevel(RegistryKey<Enchantment> enchantment, int minLevel, int maxLevel) {
+  public EnchantmentWithLevel(ResourceKey<Enchantment> enchantment, int minLevel, int maxLevel) {
     this.enchantment = enchantment;
     this.minLevel = minLevel;
     this.maxLevel = maxLevel;
   }
 
-  public EnchantmentWithLevel(RegistryKey<Enchantment> enchantment, int level) {
+  public EnchantmentWithLevel(ResourceKey<Enchantment> enchantment, int level) {
     this(enchantment, level, level);
   }
 
-  public RegistryKey<Enchantment> getEnchantment() {
+  public ResourceKey<Enchantment> getEnchantment() {
     return enchantment;
   }
 
@@ -61,8 +61,8 @@ public class EnchantmentWithLevel {
   @Override
   public String toString() {
     if (minLevel == maxLevel) {
-      return enchantment.getValue().toString() + " " + minLevel;
+      return enchantment.identifier().toString() + " " + minLevel;
     }
-    return enchantment.getValue().toString() + " " + minLevel + "-" + maxLevel;
+    return enchantment.identifier().toString() + " " + minLevel + "-" + maxLevel;
   }
 }

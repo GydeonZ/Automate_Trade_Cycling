@@ -84,10 +84,10 @@ This mod supports trade cycling for the following professions:
 
 ## Requirements
 
-- Minecraft 1.21.1
-- Fabric Loader 0.18.4 or newer
-- Fabric API
-- Java 21 or newer
+- Minecraft 26.3 (Wilderness Bound)
+- Fabric Loader 0.19.5 or newer
+- Fabric API 0.162.0+26.3 or newer
+- Java 25 or newer
 
 ## Tips
 

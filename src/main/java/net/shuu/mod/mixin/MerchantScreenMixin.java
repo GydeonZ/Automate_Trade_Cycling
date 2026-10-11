@@ -1,10 +1,11 @@
 package net.shuu.mod.mixin;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.MerchantScreen;
-import net.minecraft.village.TradeOfferList;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.shuu.mod.manager.TradeCyclingManager;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -12,14 +13,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MerchantScreen.class)
 public class MerchantScreenMixin {
 
+  @Unique
   private int checkDelay = 0;
-  private static final int CHECK_INTERVAL = 10; // Check setiap 10 ticks (0.5 detik)
+
+  @Unique
+  private static final int CHECK_INTERVAL = 10; // Check setiap 10 frame (0.5 detik)
 
   /**
-   * Hook ke render method untuk check trade offers setiap frame
+   * Hook ke extractContents method untuk check trade offers
+   * MerchantScreen mengekstrak isinya setiap frame saat screen terbuka
    */
-  @Inject(method = "render", at = @At("HEAD"))
-  private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+  @Inject(method = "extractContents", at = @At("HEAD"))
+  private void onExtractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
     TradeCyclingManager manager = TradeCyclingManager.getInstance();
 
     // Hanya check jika sedang cycling
@@ -36,11 +41,11 @@ public class MerchantScreenMixin {
     MerchantScreen screen = (MerchantScreen) (Object) this;
 
     try {
-      TradeOfferList offers = screen.getScreenHandler().getRecipes();
+      MerchantOffers offers = screen.getMenu().getOffers();
 
       if (offers != null && !offers.isEmpty()) {
         net.shuu.mod.AutomateTradeCycling.LOGGER
-            .info("[MIXIN] Checking offers from render, offers count: " + offers.size());
+            .info("[MIXIN] Checking offers from extractContents, offers count: " + offers.size());
         boolean found = manager.checkCurrentOffers(offers);
 
         if (found) {

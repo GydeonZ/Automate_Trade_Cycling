@@ -26,11 +26,11 @@ public class AutomateTradeCycling implements ModInitializer {
 	}
 
 	private void registerPackets() {
-		// Register payload type
-		PayloadTypeRegistry.playC2S().register(CycleTradesPacket.ID, CycleTradesPacket.CODEC);
+		// Register payload type (client -> server)
+		PayloadTypeRegistry.serverboundPlay().register(CycleTradesPacket.TYPE, CycleTradesPacket.CODEC);
 
 		// Register server-side packet handler
-		ServerPlayNetworking.registerGlobalReceiver(CycleTradesPacket.ID, (payload, context) -> {
+		ServerPlayNetworking.registerGlobalReceiver(CycleTradesPacket.TYPE, (payload, context) -> {
 			context.server().execute(() -> {
 				PacketHandler.onCycleTrades(context.player());
 			});

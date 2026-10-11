@@ -1,17 +1,17 @@
 package net.shuu.mod.mixin;
 
-import net.minecraft.screen.MerchantScreenHandler;
-import net.minecraft.village.Merchant;
+import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.trading.Merchant;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
- * Accessor untuk mendapatkan merchant dari MerchantScreenHandler
+ * Accessor untuk mendapatkan merchant dari MerchantMenu
  * Diperlukan untuk server-side cycling logic
  */
-@Mixin(MerchantScreenHandler.class)
+@Mixin(MerchantMenu.class)
 public interface MerchantScreenHandlerAccessor {
 
-  @Accessor("merchant")
+  @Accessor("trader")
   Merchant getMerchant();
 }

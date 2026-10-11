@@ -1,23 +1,26 @@
 package net.shuu.mod.screen;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Text;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.shuu.mod.config.EnchantmentWithLevel;
 import net.shuu.mod.config.TradeCyclingConfig;
 import net.shuu.mod.manager.TradeCyclingManager;
@@ -31,15 +34,15 @@ import java.util.stream.Collectors;
  * Khusus untuk profesi Librarian yang menjual Enchanted Books
  */
 public class EnchantmentSelectionScreen extends Screen {
-  private final VillagerEntity villager;
-  private final VillagerProfession profession;
+  private final Villager villager;
+  private final ResourceKey<VillagerProfession> profession;
 
   // Data class untuk enchantment dengan max level
   private static class EnchantmentInfo {
-    final RegistryKey<Enchantment> key;
+    final ResourceKey<Enchantment> key;
     final int maxLevel;
 
-    EnchantmentInfo(RegistryKey<Enchantment> key, int maxLevel) {
+    EnchantmentInfo(ResourceKey<Enchantment> key, int maxLevel) {
       this.key = key;
       this.maxLevel = maxLevel;
     }
@@ -48,7 +51,7 @@ public class EnchantmentSelectionScreen extends Screen {
   private final List<EnchantmentInfo> availableEnchantments;
   private final Set<EnchantmentWithLevel> selectedEnchantments;
   private List<EnchantmentInfo> filteredEnchantments;
-  private TextFieldWidget searchField;
+  private EditBox searchField;
 
   private static final int ITEMS_PER_ROW = 7;
   private static final int ITEM_SIZE = 20;
@@ -57,10 +60,10 @@ public class EnchantmentSelectionScreen extends Screen {
   private int scrollOffset = 0;
   private int maxScroll;
 
-  public EnchantmentSelectionScreen(VillagerEntity villager) {
-    super(Text.literal("Pilih Enchantment untuk Trade Cycling"));
+  public EnchantmentSelectionScreen(Villager villager) {
+    super(Component.literal("Pilih Enchantment untuk Trade Cycling"));
     this.villager = villager;
-    this.profession = villager.getVillagerData().getProfession();
+    this.profession = TradeCyclingManager.getProfessionKey(villager);
 
     // Daftar enchantment dengan max level yang sering dijual Librarian
     this.availableEnchantments = Arrays.asList(
@@ -127,21 +130,19 @@ public class EnchantmentSelectionScreen extends Screen {
     super.init();
 
     // Search field
-    searchField = new TextFieldWidget(this.textRenderer, this.width / 2 - 110, 30, 180, 20, Text.literal("Search"));
-    searchField.setPlaceholder(Text.literal("\u00a77Cari enchantment..."));
-    searchField.setChangedListener(this::onSearchTextChanged);
-    searchField.setFocusUnlocked(true);
-    this.addSelectableChild(searchField);
+    searchField = new EditBox(this.font, this.width / 2 - 110, 30, 180, 20, Component.literal("Search"));
+    searchField.setHint(Component.literal("\u00a77Cari enchantment..."));
+    searchField.setResponder(this::onSearchTextChanged);
+    searchField.setCanLoseFocus(true);
+    this.addRenderableWidget(searchField);
     this.setInitialFocus(searchField);
 
     // Speed settings button (gear icon)
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("\u2699"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("\u2699"), button -> {
       // Open speed config screen
-      if (this.client != null) {
-        this.client.setScreen(new CyclingSpeedConfigScreen(this));
-      }
+      this.minecraft.setScreenAndShow(new CyclingSpeedConfigScreen(this));
     })
-        .dimensions(this.width / 2 + 75, 30, 20, 20)
+        .bounds(this.width / 2 + 75, 30, 20, 20)
         .build());
 
     int buttonY = this.height - 40;
@@ -149,39 +150,39 @@ public class EnchantmentSelectionScreen extends Screen {
     int buttonSpacing = 10;
 
     // Tombol Start Cycling
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Start Cycling"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("Start Cycling"), button -> {
       if (!selectedEnchantments.isEmpty()) {
         TradeCyclingConfig.getInstance().setDesiredEnchantments(profession, selectedEnchantments);
         TradeCyclingManager.getInstance().startCycling(villager);
-        this.close();
+        this.onClose();
       }
     })
-        .dimensions(this.width / 2 - buttonWidth - buttonSpacing / 2, buttonY, buttonWidth, 20)
+        .bounds(this.width / 2 - buttonWidth - buttonSpacing / 2, buttonY, buttonWidth, 20)
         .build());
 
     // Tombol Cancel
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), button -> {
-      this.close();
+    this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> {
+      this.onClose();
     })
-        .dimensions(this.width / 2 + buttonSpacing / 2, buttonY, buttonWidth, 20)
+        .bounds(this.width / 2 + buttonSpacing / 2, buttonY, buttonWidth, 20)
         .build());
 
     // Tombol Clear All
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Clear All"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("Clear All"), button -> {
       selectedEnchantments.clear();
     })
-        .dimensions(10, this.height - 40, 80, 20)
+        .bounds(10, this.height - 40, 80, 20)
         .build());
 
     // Tombol Select All
-    this.addDrawableChild(ButtonWidget.builder(Text.literal("Select All"), button -> {
+    this.addRenderableWidget(Button.builder(Component.literal("Select All"), button -> {
       selectedEnchantments.clear();
       // Add all enchantments with their max level (accept any level 1 to max)
       for (EnchantmentInfo info : filteredEnchantments) {
         selectedEnchantments.add(new EnchantmentWithLevel(info.key, 1, info.maxLevel));
       }
     })
-        .dimensions(100, this.height - 40, 80, 20)
+        .bounds(100, this.height - 40, 80, 20)
         .build());
   }
 
@@ -193,7 +194,7 @@ public class EnchantmentSelectionScreen extends Screen {
       filteredEnchantments = availableEnchantments.stream()
           .filter(info -> {
             // Get enchantment name dari key
-            String keyPath = info.key.getValue().getPath();
+            String keyPath = info.key.identifier().getPath();
             return keyPath.toLowerCase().contains(search);
           })
           .collect(Collectors.toList());
@@ -202,42 +203,38 @@ public class EnchantmentSelectionScreen extends Screen {
   }
 
   @Override
-  public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-    // Render background
-    this.renderBackground(context, mouseX, mouseY, delta);
-
-    // Render widgets (buttons)
-    super.render(context, mouseX, mouseY, delta);
+  public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    // Render widgets (buttons, search field)
+    super.extractRenderState(context, mouseX, mouseY, delta);
 
     // Title
-    context.drawCenteredTextWithShadow(this.textRenderer, this.title,
+    context.centeredText(this.font, this.title,
         this.width / 2, 10, 0xFFFFFF);
 
     // Selected enchantments count
-    context.drawTextWithShadow(this.textRenderer,
-        Text.literal("\u00a7aDipilih: " + selectedEnchantments.size() + "/" + filteredEnchantments.size() + " (Total: "
-            + availableEnchantments.size() + ")"),
+    context.text(this.font,
+        Component.literal("\u00a7aDipilih: " + selectedEnchantments.size() + "/" + filteredEnchantments.size()
+            + " (Total: " + availableEnchantments.size() + ")"),
         10, 10, 0xFFFFFF);
 
     // Enchantment grid
     renderEnchantmentGrid(context, mouseX, mouseY);
 
     // Instructions
-    context.drawCenteredTextWithShadow(this.textRenderer,
-        Text.literal("§7Klik enchantment untuk memilih/membatalkan pilihan"),
+    context.centeredText(this.font,
+        Component.literal("§7Klik enchantment untuk memilih/membatalkan pilihan"),
         this.width / 2, this.height - 60, 0xFFFFFF);
-
-    // Render search field last so it's on top
-    searchField.render(context, mouseX, mouseY, delta);
   }
 
-  private void renderEnchantmentGrid(DrawContext context, int mouseX, int mouseY) {
+  private void renderEnchantmentGrid(GuiGraphicsExtractor context, int mouseX, int mouseY) {
     int startX = this.width / 2 - (ITEMS_PER_ROW * ITEM_SPACING) / 2;
     int startY = 60;
 
-    MinecraftClient client = MinecraftClient.getInstance();
-    if (client.world == null)
+    Minecraft client = Minecraft.getInstance();
+    if (client.level == null)
       return;
+
+    Registry<Enchantment> enchantmentRegistry = client.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 
     for (int row = scrollOffset; row < Math.min(scrollOffset + 5,
         (int) Math.ceil((double) filteredEnchantments.size() / ITEMS_PER_ROW)); row++) {
@@ -260,34 +257,31 @@ public class EnchantmentSelectionScreen extends Screen {
         context.fill(x, y, x + ITEM_SIZE, y + ITEM_SIZE, 0xFF373737);
 
         // Create enchanted book with this enchantment at max level
-        Optional<RegistryEntry.Reference<Enchantment>> enchantmentEntry = client.world.getRegistryManager()
-            .get(RegistryKeys.ENCHANTMENT).getEntry(enchantInfo.key);
+        Optional<Holder.Reference<Enchantment>> enchantmentEntry = enchantmentRegistry.get(enchantInfo.key);
 
         if (enchantmentEntry.isPresent()) {
           ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
-          ItemEnchantmentsComponent.Builder builder = new ItemEnchantmentsComponent.Builder(
-              ItemEnchantmentsComponent.DEFAULT);
-          builder.add(enchantmentEntry.get(), enchantInfo.maxLevel);
-          book.set(DataComponentTypes.STORED_ENCHANTMENTS, builder.build());
+          ItemEnchantments.Mutable builder = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+          builder.set(enchantmentEntry.get(), enchantInfo.maxLevel);
+          book.set(DataComponents.STORED_ENCHANTMENTS, builder.toImmutable());
 
           // Draw item
-          context.drawItem(book, x + 2, y + 2);
+          context.item(book, x + 2, y + 2);
 
           // Highlight on hover
           if (mouseX >= x && mouseX < x + ITEM_SIZE && mouseY >= y && mouseY < y + ITEM_SIZE) {
             context.fill(x, y, x + ITEM_SIZE, y + ITEM_SIZE, 0x80FFFFFF);
 
             // Draw tooltip with all level ranges
-            java.util.List<Text> tooltip = new java.util.ArrayList<>();
-            String baseName = enchantmentEntry.get().getIdAsString().replace("minecraft:", "");
+            List<Component> tooltip = new ArrayList<>();
 
             // Add all levels
             for (int level = 1; level <= enchantInfo.maxLevel; level++) {
-              Text leveledName = Enchantment.getName(enchantmentEntry.get(), level);
+              Component leveledName = Enchantment.getFullname(enchantmentEntry.get(), level);
               tooltip.add(leveledName);
             }
 
-            context.drawTooltip(this.textRenderer, tooltip, mouseX, mouseY);
+            context.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
           }
         }
       }
@@ -295,15 +289,17 @@ public class EnchantmentSelectionScreen extends Screen {
   }
 
   @Override
-  public boolean mouseClicked(double mouseX, double mouseY, int button) {
+  public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
     // Check search field first
-    if (searchField.mouseClicked(mouseX, mouseY, button)) {
+    if (searchField.mouseClicked(event, doubleClick)) {
       return true;
     }
 
-    if (button == 0) { // Left click
+    if (event.button() == 0) { // Left click
       int startX = this.width / 2 - (ITEMS_PER_ROW * ITEM_SPACING) / 2;
       int startY = 60;
+      double mouseX = event.x();
+      double mouseY = event.y();
 
       for (int row = scrollOffset; row < Math.min(scrollOffset + 5,
           (int) Math.ceil((double) filteredEnchantments.size() / ITEMS_PER_ROW)); row++) {
@@ -336,7 +332,7 @@ public class EnchantmentSelectionScreen extends Screen {
       }
     }
 
-    return super.mouseClicked(mouseX, mouseY, button);
+    return super.mouseClicked(event, doubleClick);
   }
 
   @Override
@@ -350,23 +346,23 @@ public class EnchantmentSelectionScreen extends Screen {
   }
 
   @Override
-  public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-    if (searchField.keyPressed(keyCode, scanCode, modifiers)) {
+  public boolean keyPressed(KeyEvent event) {
+    if (searchField.keyPressed(event)) {
       return true;
     }
-    return super.keyPressed(keyCode, scanCode, modifiers);
+    return super.keyPressed(event);
   }
 
   @Override
-  public boolean charTyped(char chr, int modifiers) {
-    if (searchField.charTyped(chr, modifiers)) {
+  public boolean charTyped(CharacterEvent event) {
+    if (searchField.charTyped(event)) {
       return true;
     }
-    return super.charTyped(chr, modifiers);
+    return super.charTyped(event);
   }
 
   @Override
-  public boolean shouldPause() {
+  public boolean isPauseScreen() {
     return true;
   }
 }

@@ -1,35 +1,36 @@
 package net.shuu.mod.manager;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.screen.MerchantScreenHandler;
-import net.minecraft.text.Text;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.village.TradeOffer;
-import net.minecraft.village.TradeOfferList;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.shuu.mod.AutomateTradeCycling;
 import net.shuu.mod.config.EnchantmentWithLevel;
 import net.shuu.mod.config.TradeCyclingConfig;
 import net.shuu.mod.network.CycleTradesPacket;
 import net.shuu.mod.util.VillagerProfessionHelper;
 
+import java.util.Optional;
 import java.util.Set;
 
 public class TradeCyclingManager {
   private static TradeCyclingManager INSTANCE;
 
-  private VillagerEntity targetVillager = null;
+  private Villager targetVillager = null;
   private boolean isSearching = false;
   private boolean foundDesiredItem = false;
   private int cycleDelay = 0;
@@ -58,13 +59,21 @@ public class TradeCyclingManager {
     return cyclingDelayMs / 50; // Convert ms to ticks (1000ms = 20 ticks)
   }
 
-  public void startCycling(VillagerEntity villager) {
+  /**
+   * Ambil ResourceKey profesi dari villager (profesi sekarang disimpan sebagai
+   * Holder di VillagerData)
+   */
+  public static ResourceKey<VillagerProfession> getProfessionKey(Villager villager) {
+    return villager.getVillagerData().profession().unwrapKey().orElse(VillagerProfession.NONE);
+  }
+
+  public void startCycling(Villager villager) {
     if (villager == null) {
       AutomateTradeCycling.LOGGER.warn("Cannot start cycling: villager is null");
       return;
     }
 
-    VillagerProfession profession = villager.getVillagerData().getProfession();
+    ResourceKey<VillagerProfession> profession = getProfessionKey(villager);
     TradeCyclingConfig config = TradeCyclingConfig.getInstance();
 
     // Check if it's Librarian with enchantments OR other profession with items
@@ -72,10 +81,10 @@ public class TradeCyclingManager {
     boolean hasDesiredEnchantments = config.hasDesiredEnchantments(profession);
 
     if (!hasDesiredItems && !hasDesiredEnchantments) {
-      MinecraftClient client = MinecraftClient.getInstance();
+      Minecraft client = Minecraft.getInstance();
       if (client.player != null) {
-        client.player.sendMessage(Text.literal("§cTidak ada item/enchantment yang dicari untuk profesi " +
-            VillagerProfessionHelper.getProfessionDisplayName(profession) + "!"), false);
+        client.player.sendSystemMessage(Component.literal("§cTidak ada item/enchantment yang dicari untuk profesi " +
+            VillagerProfessionHelper.getProfessionDisplayName(profession) + "!"));
       }
       return;
     }
@@ -86,22 +95,22 @@ public class TradeCyclingManager {
     config.setCycling(true);
     config.setCurrentProfession(profession);
 
-    MinecraftClient client = MinecraftClient.getInstance();
+    Minecraft client = Minecraft.getInstance();
     if (client.player != null) {
       if (hasDesiredEnchantments) {
         // Librarian with enchantments
         int enchantCount = config.getDesiredEnchantments(profession).size();
-        client.player.sendMessage(Text.literal("§a§l[CYCLING AKTIF]"), false);
-        client.player.sendMessage(Text.literal("§eMencari " + enchantCount + " enchantment untuk " +
-            VillagerProfessionHelper.getProfessionDisplayName(profession)), false);
+        client.player.sendSystemMessage(Component.literal("§a§l[CYCLING AKTIF]"));
+        client.player.sendSystemMessage(Component.literal("§eMencari " + enchantCount + " enchantment untuk " +
+            VillagerProfessionHelper.getProfessionDisplayName(profession)));
       } else {
         // Other professions with items
         Set<Item> desiredItems = config.getDesiredItems(profession);
-        client.player.sendMessage(Text.literal("§a§l[CYCLING AKTIF]"), false);
-        client.player.sendMessage(Text.literal("§eMencari " + desiredItems.size() + " item untuk " +
-            VillagerProfessionHelper.getProfessionDisplayName(profession)), false);
+        client.player.sendSystemMessage(Component.literal("§a§l[CYCLING AKTIF]"));
+        client.player.sendSystemMessage(Component.literal("§eMencari " + desiredItems.size() + " item untuk " +
+            VillagerProfessionHelper.getProfessionDisplayName(profession)));
       }
-      client.player.sendMessage(Text.literal("§7Klik kanan villager untuk memulai..."), false);
+      client.player.sendSystemMessage(Component.literal("§7Klik kanan villager untuk memulai..."));
     }
 
     AutomateTradeCycling.LOGGER.info("Started trade cycling for profession: " + profession);
@@ -120,7 +129,7 @@ public class TradeCyclingManager {
     AutomateTradeCycling.LOGGER.info("Trade cycling stopped - all flags reset");
   }
 
-  public void tick(MinecraftClient client) {
+  public void tick(Minecraft client) {
     if (!isSearching || targetVillager == null || client.player == null) {
       return;
     }
@@ -135,7 +144,7 @@ public class TradeCyclingManager {
     // Cek apakah villager masih valid
     if (!targetVillager.isAlive() || targetVillager.isRemoved()) {
       stopCycling();
-      client.player.sendMessage(Text.literal("§cVillager hilang atau mati!"), false);
+      client.player.sendSystemMessage(Component.literal("§cVillager hilang atau mati!"));
       return;
     }
 
@@ -146,7 +155,7 @@ public class TradeCyclingManager {
     }
 
     // Cek apakah player sedang membuka merchant screen dengan target villager
-    if (client.player.currentScreenHandler instanceof MerchantScreenHandler merchantHandler) {
+    if (client.player.containerMenu instanceof MerchantMenu) {
       // Kirim packet cycling ke server
       AutomateTradeCycling.LOGGER
           .info("[TICK] Sending cycle packet, isSearching: " + isSearching + ", foundDesiredItem: " + foundDesiredItem
@@ -160,7 +169,7 @@ public class TradeCyclingManager {
    * Kirim packet cycling ke server
    */
   private void sendCyclePacket() {
-    if (ClientPlayNetworking.canSend(CycleTradesPacket.ID)) {
+    if (ClientPlayNetworking.canSend(CycleTradesPacket.TYPE)) {
       ClientPlayNetworking.send(new CycleTradesPacket());
       AutomateTradeCycling.LOGGER.info("Sent cycle trades packet to server");
     } else {
@@ -172,13 +181,13 @@ public class TradeCyclingManager {
    * Method untuk check offers ketika merchant screen dibuka
    * Dipanggil dari MerchantScreenMixin
    */
-  public boolean checkCurrentOffers(TradeOfferList offers) {
+  public boolean checkCurrentOffers(MerchantOffers offers) {
     if (!isSearching || targetVillager == null) {
       return false;
     }
 
-    MinecraftClient client = MinecraftClient.getInstance();
-    if (client.player == null || client.world == null) {
+    Minecraft client = Minecraft.getInstance();
+    if (client.player == null || client.level == null) {
       return false;
     }
 
@@ -186,7 +195,7 @@ public class TradeCyclingManager {
       return false;
     }
 
-    VillagerProfession profession = targetVillager.getVillagerData().getProfession();
+    ResourceKey<VillagerProfession> profession = getProfessionKey(targetVillager);
     TradeCyclingConfig config = TradeCyclingConfig.getInstance();
 
     // Check if we're looking for enchantments (Librarian) or regular items
@@ -198,38 +207,40 @@ public class TradeCyclingManager {
     }
 
     // Cek apakah ada item/enchantment yang diinginkan di trade offers
-    for (TradeOffer offer : offers) {
+    for (MerchantOffer offer : offers) {
       // Safety check untuk offer yang valid
-      if (offer == null || offer.isDisabled() || offer.getSellItem() == null) {
+      if (offer == null || offer.isOutOfStock()) {
         continue;
       }
 
-      Item sellItem = offer.getSellItem().getItem();
+      ItemStack sellStack = offer.getResult();
 
       // Safety check untuk item yang valid
-      if (sellItem == null) {
+      if (sellStack == null || sellStack.isEmpty()) {
         continue;
       }
+
+      Item sellItem = sellStack.getItem();
 
       // Check for enchanted books with specific enchantments
       if (sellItem == Items.ENCHANTED_BOOK && !desiredEnchantments.isEmpty()) {
-        ItemEnchantmentsComponent enchantments = offer.getSellItem().get(DataComponentTypes.STORED_ENCHANTMENTS);
+        ItemEnchantments enchantments = sellStack.get(DataComponents.STORED_ENCHANTMENTS);
 
         if (enchantments != null) {
-          for (RegistryEntry<Enchantment> enchantmentEntry : enchantments.getEnchantments()) {
+          for (Holder<Enchantment> enchantmentEntry : enchantments.keySet()) {
             // Get enchantment level from the book
             int level = enchantments.getLevel(enchantmentEntry);
 
             // Check if this enchantment matches our filter
-            if (enchantmentEntry.getKey().isPresent()) {
-              RegistryKey<Enchantment> enchantmentKey = enchantmentEntry.getKey().get();
+            Optional<ResourceKey<Enchantment>> enchantmentKey = enchantmentEntry.unwrapKey();
 
+            if (enchantmentKey.isPresent()) {
               for (EnchantmentWithLevel desired : desiredEnchantments) {
-                if (desired.getEnchantment().equals(enchantmentKey) && desired.matchesLevel(level)) {
+                if (desired.getEnchantment().equals(enchantmentKey.get()) && desired.matchesLevel(level)) {
                   // FOUND enchantment with matching level!
                   String enchantName;
                   try {
-                    enchantName = Enchantment.getName(enchantmentEntry, level).getString();
+                    enchantName = Enchantment.getFullname(enchantmentEntry, level).getString();
                   } catch (Exception e) {
                     enchantName = "Enchanted Book";
                     AutomateTradeCycling.LOGGER.warn("Failed to get enchantment name: " + e.getMessage());
@@ -244,11 +255,11 @@ public class TradeCyclingManager {
                   this.foundDesiredItem = true;
                   stopCycling();
 
-                  client.player.sendMessage(Text.literal("§a§l========================================"), false);
-                  client.player.sendMessage(Text.literal("§a§l[DITEMUKAN!] §r§a" + enchantName), false);
-                  client.player.sendMessage(Text.literal("§a§l========================================"), false);
-                  client.player.sendMessage(Text.literal("§eEnchantment tersedia untuk trade!"), false);
-                  client.player.sendMessage(Text.literal("§7Cycling dihentikan."), false);
+                  client.player.sendSystemMessage(Component.literal("§a§l========================================"));
+                  client.player.sendSystemMessage(Component.literal("§a§l[DITEMUKAN!] §r§a" + enchantName));
+                  client.player.sendSystemMessage(Component.literal("§a§l========================================"));
+                  client.player.sendSystemMessage(Component.literal("§eEnchantment tersedia untuk trade!"));
+                  client.player.sendSystemMessage(Component.literal("§7Cycling dihentikan."));
 
                   AutomateTradeCycling.LOGGER.info("[CHECK_OFFERS] Returning true, cycling should be stopped now");
                   return true;
@@ -264,17 +275,17 @@ public class TradeCyclingManager {
         // Dapatkan nama item dengan aman
         String itemName;
         try {
-          itemName = offer.getSellItem().getName().getString();
+          itemName = sellStack.getHoverName().getString();
         } catch (Exception e) {
           itemName = "Unknown Item";
           AutomateTradeCycling.LOGGER.warn("Failed to get item name: " + e.getMessage());
         }
 
-        client.player.sendMessage(Text.literal("§a§l========================================"), false);
-        client.player.sendMessage(Text.literal("§a§l[DITEMUKAN!] §r§a" + itemName), false);
-        client.player.sendMessage(Text.literal("§a§l========================================"), false);
-        client.player.sendMessage(Text.literal("§eItem tersedia untuk trade!"), false);
-        client.player.sendMessage(Text.literal("§7Cycling dihentikan."), false);
+        client.player.sendSystemMessage(Component.literal("§a§l========================================"));
+        client.player.sendSystemMessage(Component.literal("§a§l[DITEMUKAN!] §r§a" + itemName));
+        client.player.sendSystemMessage(Component.literal("§a§l========================================"));
+        client.player.sendSystemMessage(Component.literal("§eItem tersedia untuk trade!"));
+        client.player.sendSystemMessage(Component.literal("§7Cycling dihentikan."));
 
         AutomateTradeCycling.LOGGER.info("Found desired item: " + itemName);
 
@@ -296,21 +307,21 @@ public class TradeCyclingManager {
     return foundDesiredItem;
   }
 
-  public VillagerEntity getTargetVillager() {
+  public Villager getTargetVillager() {
     return targetVillager;
   }
 
   // Helper untuk mendapatkan villager yang sedang dilihat player
-  public static VillagerEntity getTargetedVillager(MinecraftClient client) {
-    if (client.player == null || client.crosshairTarget == null) {
+  public static Villager getTargetedVillager(Minecraft client) {
+    if (client.player == null || client.hitResult == null) {
       return null;
     }
 
-    HitResult hitResult = client.crosshairTarget;
+    HitResult hitResult = client.hitResult;
     if (hitResult.getType() == HitResult.Type.ENTITY) {
       EntityHitResult entityHit = (EntityHitResult) hitResult;
-      if (entityHit.getEntity() instanceof VillagerEntity) {
-        return (VillagerEntity) entityHit.getEntity();
+      if (entityHit.getEntity() instanceof Villager villager) {
+        return villager;
       }
     }
 

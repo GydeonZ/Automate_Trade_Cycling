@@ -1,25 +1,25 @@
 package net.shuu.mod.config;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import java.util.*;
 
 public class TradeCyclingConfig {
   private static TradeCyclingConfig INSTANCE;
 
   // Map untuk menyimpan item yang dicari per profesi
-  private final Map<VillagerProfession, Set<Item>> desiredItems = new HashMap<>();
+  private final Map<ResourceKey<VillagerProfession>, Set<Item>> desiredItems = new HashMap<>();
 
   // Map untuk menyimpan enchantment dengan level yang dicari per profesi (khusus
   // Librarian)
-  private final Map<VillagerProfession, Set<EnchantmentWithLevel>> desiredEnchantments = new HashMap<>();
+  private final Map<ResourceKey<VillagerProfession>, Set<EnchantmentWithLevel>> desiredEnchantments = new HashMap<>();
 
   // Status cycling
   private boolean isCycling = false;
-  private VillagerProfession currentProfession = null;
+  private ResourceKey<VillagerProfession> currentProfession = null;
 
   public static TradeCyclingConfig getInstance() {
     if (INSTANCE == null) {
@@ -32,7 +32,7 @@ public class TradeCyclingConfig {
     // Initialize dengan profesi default
   }
 
-  public void setDesiredItems(VillagerProfession profession, Set<Item> items) {
+  public void setDesiredItems(ResourceKey<VillagerProfession> profession, Set<Item> items) {
     if (items == null || items.isEmpty()) {
       desiredItems.remove(profession);
     } else {
@@ -40,19 +40,19 @@ public class TradeCyclingConfig {
     }
   }
 
-  public Set<Item> getDesiredItems(VillagerProfession profession) {
+  public Set<Item> getDesiredItems(ResourceKey<VillagerProfession> profession) {
     return desiredItems.getOrDefault(profession, Collections.emptySet());
   }
 
-  public boolean hasDesiredItems(VillagerProfession profession) {
+  public boolean hasDesiredItems(ResourceKey<VillagerProfession> profession) {
     return desiredItems.containsKey(profession) && !desiredItems.get(profession).isEmpty();
   }
 
-  public void addDesiredItem(VillagerProfession profession, Item item) {
+  public void addDesiredItem(ResourceKey<VillagerProfession> profession, Item item) {
     desiredItems.computeIfAbsent(profession, k -> new HashSet<>()).add(item);
   }
 
-  public void removeDesiredItem(VillagerProfession profession, Item item) {
+  public void removeDesiredItem(ResourceKey<VillagerProfession> profession, Item item) {
     Set<Item> items = desiredItems.get(profession);
     if (items != null) {
       items.remove(item);
@@ -62,12 +62,12 @@ public class TradeCyclingConfig {
     }
   }
 
-  public void clearDesiredItems(VillagerProfession profession) {
+  public void clearDesiredItems(ResourceKey<VillagerProfession> profession) {
     desiredItems.remove(profession);
   }
 
   // Enchantment methods
-  public void setDesiredEnchantments(VillagerProfession profession, Set<EnchantmentWithLevel> enchantments) {
+  public void setDesiredEnchantments(ResourceKey<VillagerProfession> profession, Set<EnchantmentWithLevel> enchantments) {
     if (enchantments == null || enchantments.isEmpty()) {
       desiredEnchantments.remove(profession);
     } else {
@@ -75,15 +75,15 @@ public class TradeCyclingConfig {
     }
   }
 
-  public Set<EnchantmentWithLevel> getDesiredEnchantments(VillagerProfession profession) {
+  public Set<EnchantmentWithLevel> getDesiredEnchantments(ResourceKey<VillagerProfession> profession) {
     return desiredEnchantments.getOrDefault(profession, Collections.emptySet());
   }
 
-  public boolean hasDesiredEnchantments(VillagerProfession profession) {
+  public boolean hasDesiredEnchantments(ResourceKey<VillagerProfession> profession) {
     return desiredEnchantments.containsKey(profession) && !desiredEnchantments.get(profession).isEmpty();
   }
 
-  public void clearDesiredEnchantments(VillagerProfession profession) {
+  public void clearDesiredEnchantments(ResourceKey<VillagerProfession> profession) {
     desiredEnchantments.remove(profession);
   }
 
@@ -95,17 +95,17 @@ public class TradeCyclingConfig {
     this.isCycling = cycling;
   }
 
-  public VillagerProfession getCurrentProfession() {
+  public ResourceKey<VillagerProfession> getCurrentProfession() {
     return currentProfession;
   }
 
-  public void setCurrentProfession(VillagerProfession profession) {
+  public void setCurrentProfession(ResourceKey<VillagerProfession> profession) {
     this.currentProfession = profession;
   }
 
   // Method untuk mendapatkan semua item yang bisa dijual oleh profesi tertentu
-  public static Map<VillagerProfession, List<Item>> getProfessionTradeables() {
-    Map<VillagerProfession, List<Item>> tradeables = new HashMap<>();
+  public static Map<ResourceKey<VillagerProfession>, List<Item>> getProfessionTradeables() {
+    Map<ResourceKey<VillagerProfession>, List<Item>> tradeables = new HashMap<>();
 
     // ARMORER
     tradeables.put(VillagerProfession.ARMORER, Arrays.asList(
@@ -155,18 +155,18 @@ public class TradeCyclingConfig {
         Items.GLASS, Items.NAME_TAG, Items.LANTERN));
 
     // MASON (STONE MASON)
+    // Sejak 26.x, item berwarna disimpan dalam ColorCollection
     tradeables.put(VillagerProfession.MASON, Arrays.asList(
         Items.BRICK, Items.CLAY_BALL, Items.DRIPSTONE_BLOCK, Items.POLISHED_ANDESITE,
         Items.POLISHED_DIORITE, Items.POLISHED_GRANITE, Items.QUARTZ, Items.TERRACOTTA,
-        Items.WHITE_GLAZED_TERRACOTTA, Items.RED_GLAZED_TERRACOTTA));
+        Items.GLAZED_TERRACOTTA.pick(DyeColor.WHITE), Items.GLAZED_TERRACOTTA.pick(DyeColor.RED)));
 
     // SHEPHERD
-    tradeables.put(VillagerProfession.SHEPHERD, Arrays.asList(
-        Items.WHITE_WOOL, Items.ORANGE_WOOL, Items.MAGENTA_WOOL, Items.LIGHT_BLUE_WOOL,
-        Items.YELLOW_WOOL, Items.LIME_WOOL, Items.PINK_WOOL, Items.GRAY_WOOL,
-        Items.LIGHT_GRAY_WOOL, Items.CYAN_WOOL, Items.PURPLE_WOOL, Items.BLUE_WOOL,
-        Items.BROWN_WOOL, Items.GREEN_WOOL, Items.RED_WOOL, Items.BLACK_WOOL,
-        Items.WHITE_BED, Items.PAINTING, Items.WHITE_BANNER));
+    List<Item> shepherdTradeables = new ArrayList<>(Arrays.asList(Items.PAINTING));
+    shepherdTradeables.addAll(Items.WOOL.asList()); // semua warna wool
+    shepherdTradeables.add(Items.BED.pick(DyeColor.WHITE));
+    shepherdTradeables.add(Items.BANNER.pick(DyeColor.WHITE));
+    tradeables.put(VillagerProfession.SHEPHERD, shepherdTradeables);
 
     // TOOLSMITH
     tradeables.put(VillagerProfession.TOOLSMITH, Arrays.asList(

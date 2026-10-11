@@ -1,12 +1,12 @@
 package net.shuu.mod.network;
 
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.screen.MerchantScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.village.Merchant;
-import net.minecraft.village.TradeOfferList;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.shuu.mod.AutomateTradeCycling;
 import net.shuu.mod.mixin.MerchantScreenHandlerAccessor;
 
@@ -23,14 +23,14 @@ public class PacketHandler {
    * 2. Regenerate trade offers villager
    * 3. Update trade offers ke client
    */
-  public static void onCycleTrades(ServerPlayerEntity player) {
+  public static void onCycleTrades(ServerPlayer player) {
     if (player == null) {
       return;
     }
 
     // Dapatkan screen handler yang sedang dibuka player
-    ScreenHandler screenHandler = player.currentScreenHandler;
-    if (!(screenHandler instanceof MerchantScreenHandler merchantScreenHandler)) {
+    AbstractContainerMenu screenHandler = player.containerMenu;
+    if (!(screenHandler instanceof MerchantMenu merchantMenu)) {
       AutomateTradeCycling.LOGGER.warn("Player tidak membuka merchant screen");
       return;
     }
@@ -44,41 +44,39 @@ public class PacketHandler {
     Merchant merchant = accessor.getMerchant();
 
     // Validasi bahwa merchant adalah villager yang belum pernah di-trade
-    if (!(merchant instanceof VillagerEntity villager)) {
+    if (!(merchant instanceof Villager villager)) {
       AutomateTradeCycling.LOGGER.warn("Merchant bukan villager");
       return;
     }
 
     // Cek apakah villager sudah pernah di-trade (ada XP)
-    if (villager.getExperience() > 0) {
-      AutomateTradeCycling.LOGGER.info("Villager sudah pernah di-trade (XP: " + villager.getExperience() + ")");
+    if (villager.getVillagerXp() > 0) {
+      AutomateTradeCycling.LOGGER.info("Villager sudah pernah di-trade (XP: " + villager.getVillagerXp() + ")");
       return;
     }
 
     // Cek apakah villager punya job site
-    if (villager.getBrain().getOptionalMemory(net.minecraft.entity.ai.brain.MemoryModuleType.JOB_SITE).isEmpty()) {
+    if (villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty()) {
       AutomateTradeCycling.LOGGER.warn("Villager tidak punya job site");
       return;
     }
 
-    AutomateTradeCycling.LOGGER.info("Regenerating trades for villager: " + villager.getVillagerData().getProfession());
+    AutomateTradeCycling.LOGGER
+        .info("Regenerating trades for villager: " + villager.getVillagerData().profession());
 
     // CORE LOGIC: Regenerate trade offers
-    // Ini adalah cara yang digunakan oleh trade-cycling mod
-    villager.setOffers(null); // Clear offers
-    villager.getOffers(); // Regenerate new offers
+    // Ini adalah cara yang digunakan oleh trade-cycling mod:
+    // menghapus offers lama, lalu getOffers() akan membangun ulang
+    // (updateTrades) secara otomatis.
+    villager.setOffers(null);
 
-    // Note: prepareOffersFor is private in Minecraft 1.21.1
-    // We don't need to call it because getOffers() already handles special prices
+    MerchantOffers offers = villager.getOffers();
+    int villagerLevel = villager.getVillagerData().level();
+    int experience = villager.getVillagerXp();
+    boolean canRestock = villager.canRestock();
 
-    // Kirim updated offers ke client
-    TradeOfferList offers = villager.getOffers();
-    int villagerLevel = villager.getVillagerData().getLevel();
-    int experience = villager.getExperience();
-    boolean canRestock = villager.canRefreshTrades();
-
-    player.sendTradeOffers(
-        merchantScreenHandler.syncId,
+    player.sendMerchantOffers(
+        merchantMenu.containerId,
         offers,
         villagerLevel,
         experience,
