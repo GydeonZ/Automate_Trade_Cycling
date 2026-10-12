@@ -1,6 +1,7 @@
 package net.shuu.mod.manager;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
@@ -26,6 +27,12 @@ import net.shuu.mod.network.OpenVillagerTradePacket;
 import net.shuu.mod.util.VillagerProfessionHelper;
 
 import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
 
 public class TradeCyclingManager {
   private static TradeCyclingManager INSTANCE;
@@ -35,6 +42,7 @@ public class TradeCyclingManager {
   private boolean foundDesiredItem = false;
   private int cycleDelay = 0;
   private int cyclingDelayMs = 1000; // Default 1 second (1000ms)
+  private static final String SPEED_CONFIG_KEY = "cyclingDelayMs";
 
   public static TradeCyclingManager getInstance() {
     if (INSTANCE == null) {
@@ -44,6 +52,7 @@ public class TradeCyclingManager {
   }
 
   private TradeCyclingManager() {
+    loadCyclingDelay();
   }
 
   public int getCyclingDelayMs() {
@@ -52,11 +61,42 @@ public class TradeCyclingManager {
 
   public void setCyclingDelayMs(int ms) {
     this.cyclingDelayMs = Math.max(50, Math.min(10000, ms)); // Clamp between 50-10000ms
+    saveCyclingDelay();
     AutomateTradeCycling.LOGGER.info("Cycling speed updated to: " + ms + "ms");
   }
 
   private int getCyclingDelayTicks() {
-    return cyclingDelayMs / 50; // Convert ms to ticks (1000ms = 20 ticks)
+    // Minecraft processes this timer once per tick (50ms at 20 TPS).
+    // Round up so the actual interval never runs faster than the configured value.
+    return Math.max(1, (cyclingDelayMs + 49) / 50);
+  }
+
+  private Path getSpeedConfigPath() {
+    return FabricLoader.getInstance().getConfigDir().resolve("automate-trade-cycling.properties");
+  }
+
+  private void loadCyclingDelay() {
+    Path path = getSpeedConfigPath();
+    if (!Files.exists(path)) return;
+
+    Properties properties = new Properties();
+    try (InputStream input = Files.newInputStream(path)) {
+      properties.load(input);
+      int savedDelay = Integer.parseInt(properties.getProperty(SPEED_CONFIG_KEY, "1000"));
+      this.cyclingDelayMs = Math.max(50, Math.min(10000, savedDelay));
+    } catch (IOException | NumberFormatException e) {
+      AutomateTradeCycling.LOGGER.warn("Could not load cycling speed setting; using default 1000ms", e);
+    }
+  }
+
+  private void saveCyclingDelay() {
+    Properties properties = new Properties();
+    properties.setProperty(SPEED_CONFIG_KEY, String.valueOf(cyclingDelayMs));
+    try (OutputStream output = Files.newOutputStream(getSpeedConfigPath())) {
+      properties.store(output, "Automate Trade Cycling settings");
+    } catch (IOException e) {
+      AutomateTradeCycling.LOGGER.error("Could not save cycling speed setting", e);
+    }
   }
 
   public void startCycling(Villager villager) {
@@ -143,7 +183,9 @@ public class TradeCyclingManager {
     // Delay untuk cycling
     if (cycleDelay > 0) {
       cycleDelay--;
-      return;
+      if (cycleDelay > 0) {
+        return;
+      }
     }
 
     // Cek apakah player sedang membuka merchant screen dengan target villager

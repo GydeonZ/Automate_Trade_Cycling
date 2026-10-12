@@ -13,6 +13,7 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.shuu.mod.config.TradeCyclingConfig;
 import net.shuu.mod.manager.TradeCyclingManager;
+import net.shuu.mod.screen.CyclingSpeedConfigScreen;
 import net.shuu.mod.util.VillagerProfessionHelper;
 
 import java.util.*;
@@ -50,6 +51,12 @@ public class ItemSelectionScreen extends Screen {
   @Override
   protected void init() {
     super.init();
+
+    this.addRenderableWidget(Button.builder(Component.literal("⚙"), button -> {
+      if (this.minecraft != null) {
+        this.minecraft.setScreenAndShow(new CyclingSpeedConfigScreen(this));
+      }
+    }).bounds(this.width - 34, 10, 24, 20).build());
 
     int buttonY = this.height - 40;
     int buttonWidth = 100;
